@@ -50,6 +50,7 @@
 	var ui = __webpack_require__(5);
 	var DATA_PROP = 'data-depth';
 	var FLYUP_DURATION = 500;
+	var FLYUP_EASE = 'easeInOut';
 
 	var source;
 	var div = function (i) {
@@ -61,7 +62,7 @@
 	    }
 	    return e;
 	},
-	    relations = [{ depth: -1 }, { depth: 0 }, { depth: 1 }, { depth: 2 }];
+	    relations = [{ depth: -4 }, { depth: -3 }, { depth: -2 }, { depth: -1 }, { depth: 0 }, { depth: 1 }, { depth: 2 }, { depth: 3 }, { depth: 4 }, { depth: 5 }, { depth: 6 }];
 
 	var elements = relations.map(div),
 	    fragment = document.createDocumentFragment();
@@ -70,7 +71,7 @@
 	document.getElementById('cards').appendChild(fragment);
 
 	var flyup = new ui.Tween({
-	    ease: 'easeInOut',
+	    ease: FLYUP_EASE,
 	    duration: FLYUP_DURATION,
 	    values: {
 	        opacity: 1,
@@ -119,9 +120,7 @@
 	        x: depth * width,
 	        y: 100,
 	        opacity: 0,
-	        zIndex: function (e) {
-	            return depth == 1 || depth == 0 ? 2 : 0;
-	        },
+	        zIndex: depth == 0 || depth == 1 ? 1 : 0,
 	        boxShadow: '0 5px 5px rgba(0,0,0,.15)'
 	    };
 
@@ -154,22 +153,30 @@
 	}, elements.length * STAGGER_DURATION + FLYUP_DURATION);
 
 	var input = document.getElementById('lock');
+	var navView = document.getElementById('navview');
+
+	function updateList(element, depth, zIndex) {
+	    element.setAttribute(DATA_PROP, depth);
+	    ui.css.set(element, 'z-index', zIndex);
+	}
 
 	document.getElementById('downstream').onclick = function (e) {
 	    e.stopPropagation();
 	    e.preventDefault();
 
 	    elements.forEach(function (i) {
-	        var depth = parseInt(i.getAttribute(DATA_PROP));
-	        if (input.checked && (depth == 0 || depth == 1)) {
-	            if (depth == 1) {
-	                i.setAttribute(DATA_PROP, -1);
-	            }
-	            ui.css.set(i, 'z-index', depth == 0 ? 2 : depth == 1 || depth == 2 ? 1 : 0);
+	        var depth,
+	            currentDepth = parseInt(i.getAttribute(DATA_PROP));
+
+	        if (input.checked && (currentDepth == 0 || currentDepth == 1)) {
+	            depth = currentDepth == 1 ? currentDepth - 2 : 0;
 	        } else {
-	            i.setAttribute(DATA_PROP, depth - 1);
-	            ui.css.set(i, 'z-index', depth == 1 ? 2 : depth == 0 || depth == 2 ? 1 : 0);
+	            depth = currentDepth - 1;
 	        }
+
+	        var zIndexing = { 0: 3, 1: 2, '-1': 1 };
+
+	        updateList(i, depth, zIndexing[depth] || 0);
 	    });
 
 	    iterator.each('start', flyup);
@@ -184,16 +191,18 @@
 	    e.preventDefault();
 
 	    elements.forEach(function (i) {
-	        var depth = parseInt(i.getAttribute(DATA_PROP));
-	        if (input.checked && (depth == 0 || depth == -1)) {
-	            if (depth === -1) {
-	                i.setAttribute(DATA_PROP, 1);
-	            }
-	            ui.css.set(i, 'z-index', depth == 0 ? 2 : depth == -1 ? 1 : 0);
+	        var depth,
+	            currentDepth = parseInt(i.getAttribute(DATA_PROP));
+
+	        if (input.checked && (currentDepth == 0 || currentDepth == -1)) {
+	            depth = currentDepth == -1 ? currentDepth + 2 : 0;
 	        } else {
-	            i.setAttribute(DATA_PROP, depth + 1);
-	            ui.css.set(i, 'z-index', depth == 0 ? 2 : depth == -2 || depth == -1 ? 1 : 0);
+	            depth = currentDepth + 1;
 	        }
+
+	        var zIndexing = input.checked ? { 0: 3, 1: 2, 2: 1 } : { 1: 3, 0: 2, 2: 1 };
+
+	        updateList(i, depth, zIndexing[depth] || 0);
 	    });
 
 	    iterator.each('start', flyup);
