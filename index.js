@@ -120,7 +120,12 @@ setTimeout(() => {
 }, (elements.length * STAGGER_DURATION) + FLYUP_DURATION);
 
 var input = document.getElementById('lock');
-var navView = document.getElementById('navview');
+var navInput = document.getElementById('nav');
+var navView = document.getElementById('nav-view');
+
+navInput.onchange = () => {
+    navView.className = navInput.checked ? 'nav-is-open' : '';
+};
 
 function updateList (element, depth, zIndex) {
     element.setAttribute(DATA_PROP, depth);
