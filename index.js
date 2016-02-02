@@ -3,7 +3,6 @@ var ui = require('popmotion');
 var DATA_PROP = 'data-depth';
 var FLYUP_DURATION = 500;
 
-
 var source;
 var div = (i) => {
         var e = document.createElement('div');
@@ -106,13 +105,15 @@ var moveDone = new ui.Tween({
 
 var iterator = new ui.Iterator(actors);
 var sequence = new ui.Sequence();
+var STAGGER_DURATION = 150
 
-iterator.stagger('start', 150, flyup);
+iterator.stagger('start', STAGGER_DURATION, flyup);
 
 setTimeout(() => {
     iterator.each('start', moveDone);
-}, (elements.length * 150) + FLYUP_DURATION);
+}, (elements.length * STAGGER_DURATION) + FLYUP_DURATION);
 
+var input = document.getElementById('lock');
 
 document.getElementById('downstream').onclick = (e) => {
     e.stopPropagation();
@@ -120,10 +121,15 @@ document.getElementById('downstream').onclick = (e) => {
     
     elements.forEach((i) => {
         var depth = parseInt(i.getAttribute(DATA_PROP));
-        //if source do nothing, if below source subtract 2;
-        i.setAttribute(DATA_PROP, depth - 1);
-        //endif
-        ui.css.set(i, 'z-index', depth == 1 ? 2 : depth == 0 || depth == 2 ? 1 : 0);
+        if (input.checked && (depth == 0 || depth == 1)) {
+            if (depth == 1) {
+                i.setAttribute(DATA_PROP, -1);
+            }
+            ui.css.set(i, 'z-index', depth == 0 ? 2 : depth == 1 || depth == 2 ? 1 : 0);
+        } else {
+            i.setAttribute(DATA_PROP, depth - 1);
+            ui.css.set(i, 'z-index', depth == 1 ? 2 : depth == 0 || depth == 2 ? 1 : 0);
+        }
     });
 
     iterator.each('start', flyup);
@@ -139,8 +145,15 @@ document.getElementById('upstream').onclick = (e) => {
     
     elements.forEach((i) => {
         var depth = parseInt(i.getAttribute(DATA_PROP));
-        i.setAttribute(DATA_PROP, depth + 1);
-        ui.css.set(i, 'z-index', depth == 0 ? 2 : depth == 1 || depth == -1 ? 1 : 0);
+        if (input.checked && (depth == 0 || depth == -1)) {
+            if (depth === -1) {
+                i.setAttribute(DATA_PROP, 1);
+            }
+            ui.css.set(i, 'z-index', depth == 0 ? 2 : depth == -1 ? 1 : 0);
+        } else {
+            i.setAttribute(DATA_PROP, depth + 1);
+            ui.css.set(i, 'z-index', depth == 0 ? 2 : depth == -2 || depth == -1 ? 1 : 0);
+        }
     });
     
     iterator.each('start', flyup);
