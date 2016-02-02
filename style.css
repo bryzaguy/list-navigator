@@ -1,0 +1,90 @@
+    * { box-sizing: border-box; }
+
+    body, html {
+      background: #FFF;
+      height: 100vh;
+      padding: 0;
+      margin: 0;
+    }
+
+    button {
+      border-radius: 50%;
+      font-size: 15px;
+      padding: 10px;
+      font-weight: 700;
+      line-height: .5;
+      border: 1px solid;
+      cursor: pointer;
+      background-color: deepskyblue;
+      color: white;
+    }
+
+    #cards {
+        position: absolute;
+        width: calc(100% - 100px);
+        left: 50px;
+        height: 100%;
+    }
+
+    button:active {
+        opacity: .6;
+    }
+
+    .sidebar {
+      width: 50px;
+      position: fixed;
+      display: inline-block;
+      text-align: center;
+      padding: 46px 0;
+      top: -20px;
+      height: 1000px;
+      z-index: 10;
+    }
+
+    .sidebar.downstream {
+      right: 0;
+      box-shadow: -20px 0 25px white inset;
+    }
+
+    .sidebar.upstream {
+      left: 0;
+      box-shadow: 20px 0 25px white inset;
+    }
+
+    .container {
+      padding-top: 20px;
+      width: 100%;
+    }
+
+    .card {
+      display: inline-block;
+      opacity: 0;
+      box-shadow: 0 5px 5px rgba(0,0,0,.15);
+      background: repeating-linear-gradient(
+        180deg,
+        #eee,
+        #eee 25px,
+        #fff 25px,
+        #fff 50px
+      );
+      position: absolute;
+      z-index: 0;
+      width: 50%;
+      height: 800px;
+    }
+
+    .card::before {
+        width: 100%;
+        position: absolute;
+        left: 0;
+        right: 0;
+        background: #999;
+        color: #999;
+        height: 33px;
+        content: 's';
+    }
+
+    .card.source::before {
+        background: #0F75FF;
+        color: #0F75FF;
+    }

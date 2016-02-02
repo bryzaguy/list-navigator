@@ -1,8 +1,9 @@
+var style = require('./style.css');
 var ui = require('popmotion');
 var DATA_PROP = 'data-depth';
-var velocityRange = [-1000, 1000];
-var maxRotate = 30;
-var smoothing = 100;
+var FLYUP_DURATION = 500;
+
+
 var source;
 var div = (i) => {
         var e = document.createElement('div');
@@ -29,25 +30,9 @@ elements.forEach(fragment.appendChild, fragment);
 document.getElementById('cards')
         .appendChild(fragment);
 
-var resizeAdjust = new ui.Simulate({
-    simulate: 'spring',
-    duration: 100,
-    spring: 1000,
-    friction: 0.35,
-    values: {
-        x: {
-            to: function(e) {
-                var depth = parseInt(e.element.getAttribute(DATA_PROP));
-                var width = parseInt(ui.css.get(e.element, 'width'));
-                return depth * width;
-            }
-        }
-    }
-});
-
 var flyup = new ui.Tween({
     ease: 'easeInOut',
-    duration: 500,
+    duration: FLYUP_DURATION,
     values: {
         opacity: 1,
         x: {
@@ -56,6 +41,9 @@ var flyup = new ui.Tween({
                 var width = parseInt(ui.css.get(e.element, 'width'));
                 return depth * width;
             }
+        },
+        left: {
+            to: 0
         },
         y: {
             to: function(t) {
@@ -106,17 +94,25 @@ var actors = elements.map((e) => {
     return actor;
 });
 
+var moveDone = new ui.Tween({
+    values: {
+        left: function(e) {
+            var depth = parseInt(e.element.getAttribute(DATA_PROP));
+            return (depth * 50) + '%';
+        },
+        x: 0
+    }
+});
+
 var iterator = new ui.Iterator(actors);
+var sequence = new ui.Sequence();
+
 iterator.stagger('start', 150, flyup);
 
-var timer;
-window.addEventListener('resize', function () {
-    clearTimeout(timer);
+setTimeout(() => {
+    iterator.each('start', moveDone);
+}, (elements.length * 150) + FLYUP_DURATION);
 
-    timer = setTimeout(function () {
-        iterator.each('start', resizeAdjust);
-    }, 100);
-});
 
 document.getElementById('downstream').onclick = (e) => {
     e.stopPropagation();
@@ -129,8 +125,12 @@ document.getElementById('downstream').onclick = (e) => {
         //endif
         ui.css.set(i, 'z-index', depth == 1 ? 2 : depth == 0 || depth == 2 ? 1 : 0);
     });
-    
+
     iterator.each('start', flyup);
+
+    setTimeout(() => {
+        iterator.each('start', moveDone);
+    }, FLYUP_DURATION);
 };
 
 document.getElementById('upstream').onclick = (e) => {
@@ -144,4 +144,9 @@ document.getElementById('upstream').onclick = (e) => {
     });
     
     iterator.each('start', flyup);
+
+    setTimeout(() => {
+        iterator.each('start', moveDone);
+    }, FLYUP_DURATION);
+
 };

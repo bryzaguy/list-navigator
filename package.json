@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "webpack-dev-server"
+    "start": "webpack-dev-server --inline --hot"
   },
   "repository": {
     "type": "git",
@@ -21,7 +21,10 @@
     "babel-loader": "^6.2.1",
     "babel-preset-es2015-subset-loose": "^1.0.0",
     "babel-preset-stage-2": "^6.0.15",
+    "css-loader": "^0.23.1",
+    "es6-promise": "^3.0.2",
     "popmotion": "^4.3.4",
+    "style-loader": "^0.13.0",
     "webpack": "^1.12.12",
     "webpack-dev-server": "^1.14.1"
   }

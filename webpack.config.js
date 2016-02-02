@@ -1,5 +1,7 @@
 'use strict';
 
+require('es6-promise').polyfill();
+
 module.exports = {
   entry: './index.js',
   output: {
@@ -7,11 +9,14 @@ module.exports = {
     filename: 'app.js'
   },
   module: {
-    loaders: [
-      {
+    loaders: [{
         test: /\.js$/,
         exclude: /node_modules/,
         loader: "babel"
+      }, {
+        test: /\.css$/,
+        exclude: /node_modules/,
+        loader: "style!css"
       }
     ]
   }
