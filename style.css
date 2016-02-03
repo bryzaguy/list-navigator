@@ -8,6 +8,10 @@
       overflow: hidden;
     }
 
+    label {
+      z-index: 12;
+    }
+
     .mini {
       display: inline-block;
       position: relative;
