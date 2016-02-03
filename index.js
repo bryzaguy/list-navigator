@@ -12,6 +12,14 @@ var div = (i) => {
         e.setAttribute(DATA_PROP, i.depth);
         return e;
     },
+    mini = (i) => {
+        var e = document.createElement('div');
+        e.className = i.depth === 0 
+            ? 'mini source'
+            : 'mini';
+        e.setAttribute(DATA_PROP, i.depth);
+        return e;
+    },
     relations = [
         { depth: -4 }, 
         { depth: -3 }, 
@@ -27,13 +35,20 @@ var div = (i) => {
     ];
 
 var elements = relations.map(div),
-    fragment = document.createDocumentFragment();
+    fragment = document.createDocumentFragment(),
+    minis = relations.map(mini),
+    minisFragment = document.createDocumentFragment();
     
 elements.forEach(fragment.appendChild, fragment);
+minis.forEach(minisFragment.appendChild, minisFragment);
+
 document.getElementById('cards')
         .appendChild(fragment);
 
-var flyup = new ui.Tween({
+document.getElementById('nav-view')
+        .appendChild(minisFragment);
+
+var carousel = new ui.Tween({
     ease: FLYUP_EASE,
     duration: FLYUP_DURATION,
     values: {
@@ -43,7 +58,30 @@ var flyup = new ui.Tween({
                 var depth = parseInt(e.element.getAttribute(DATA_PROP));
                 return (depth * 100) + '%';
             }
-        },
+        }
+    }
+});
+
+var toActors = (y, e) => {
+    var depth = parseInt(e.getAttribute(DATA_PROP));
+    var values = {
+        x: (depth * 100) + '%',
+        y: y,
+        opacity: 0,
+        zIndex: depth == 0 || depth == 1 ? 1 : 0,
+        boxShadow: '0 5px 5px rgba(0,0,0,.15)'
+    };
+    
+    var actor = new ui.Actor({ 
+        element: e,
+        values: values
+    });
+    
+    return actor;
+};
+
+var flyup = carousel.extend({
+    values: {
         y: {
             to: function(t) {
                 var d = t.element.getAttribute(DATA_PROP);
@@ -72,29 +110,16 @@ var flyup = new ui.Tween({
     }
 });
 
-var actors = elements.map((e) => {
-    var depth = parseInt(e.getAttribute(DATA_PROP));
-    var values = {
-        x: (depth * 100) + '%',
-        y: 100,
-        opacity: 0,
-        zIndex: depth == 0 || depth == 1 ? 1 : 0,
-        boxShadow: '0 5px 5px rgba(0,0,0,.15)'
-    };
-    
-    var actor = new ui.Actor({ 
-        element: e,
-        values: values
-    });
-    
-    return actor;
-});
+var actors = elements.map(toActors.bind(null, 100));
+var miniActors = minis.map(toActors.bind(null, 0));
 
 var iterator = new ui.Iterator(actors);
-var sequence = new ui.Sequence();
+var miniIterator = new ui.Iterator(miniActors);
+
 var STAGGER_DURATION = 150;
 
 iterator.stagger('start', STAGGER_DURATION, flyup);
+miniIterator.stagger('start', STAGGER_DURATION, carousel);
 
 var lockInput = document.getElementById('lock');
 var navInput = document.getElementById('nav');
@@ -143,8 +168,10 @@ document.getElementById('downstream').onclick = (e) => {
     var zIndexing = { 0: 3, 1: 2, '-1': 1 };
     
     elements.forEach(transformElements(zIndexing, 1));
+    minis.forEach(transformElements(zIndexing, 1));
 
     iterator.each('start', flyup);
+    miniIterator.each('start', carousel);
 };
 
 document.getElementById('upstream').onclick = (e) => {
@@ -156,7 +183,8 @@ document.getElementById('upstream').onclick = (e) => {
         { 1: 3, 0: 2, 2: 1 };
 
     elements.forEach(transformElements(zIndexing, -1));
+    minis.forEach(transformElements(zIndexing, -1));
     
     iterator.each('start', flyup);
-
+    miniIterator.each('start', carousel);
 };

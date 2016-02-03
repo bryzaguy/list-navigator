@@ -58,15 +58,27 @@
 	    e.setAttribute(DATA_PROP, i.depth);
 	    return e;
 	},
+	    mini = function (i) {
+	    var e = document.createElement('div');
+	    e.className = i.depth === 0 ? 'mini source' : 'mini';
+	    e.setAttribute(DATA_PROP, i.depth);
+	    return e;
+	},
 	    relations = [{ depth: -4 }, { depth: -3 }, { depth: -2 }, { depth: -1 }, { depth: 0 }, { depth: 1 }, { depth: 2 }, { depth: 3 }, { depth: 4 }, { depth: 5 }, { depth: 6 }];
 
 	var elements = relations.map(div),
-	    fragment = document.createDocumentFragment();
+	    fragment = document.createDocumentFragment(),
+	    minis = relations.map(mini),
+	    minisFragment = document.createDocumentFragment();
 
 	elements.forEach(fragment.appendChild, fragment);
+	minis.forEach(minisFragment.appendChild, minisFragment);
+
 	document.getElementById('cards').appendChild(fragment);
 
-	var flyup = new ui.Tween({
+	document.getElementById('nav-view').appendChild(minisFragment);
+
+	var carousel = new ui.Tween({
 	    ease: FLYUP_EASE,
 	    duration: FLYUP_DURATION,
 	    values: {
@@ -76,7 +88,30 @@
 	                var depth = parseInt(e.element.getAttribute(DATA_PROP));
 	                return depth * 100 + '%';
 	            }
-	        },
+	        }
+	    }
+	});
+
+	var toActors = function (y, e) {
+	    var depth = parseInt(e.getAttribute(DATA_PROP));
+	    var values = {
+	        x: depth * 100 + '%',
+	        y: y,
+	        opacity: 0,
+	        zIndex: depth == 0 || depth == 1 ? 1 : 0,
+	        boxShadow: '0 5px 5px rgba(0,0,0,.15)'
+	    };
+
+	    var actor = new ui.Actor({
+	        element: e,
+	        values: values
+	    });
+
+	    return actor;
+	};
+
+	var flyup = carousel.extend({
+	    values: {
 	        y: {
 	            to: function (t) {
 	                var d = t.element.getAttribute(DATA_PROP);
@@ -105,29 +140,16 @@
 	    }
 	});
 
-	var actors = elements.map(function (e) {
-	    var depth = parseInt(e.getAttribute(DATA_PROP));
-	    var values = {
-	        x: depth * 100 + '%',
-	        y: 100,
-	        opacity: 0,
-	        zIndex: depth == 0 || depth == 1 ? 1 : 0,
-	        boxShadow: '0 5px 5px rgba(0,0,0,.15)'
-	    };
-
-	    var actor = new ui.Actor({
-	        element: e,
-	        values: values
-	    });
-
-	    return actor;
-	});
+	var actors = elements.map(toActors.bind(null, 100));
+	var miniActors = minis.map(toActors.bind(null, 0));
 
 	var iterator = new ui.Iterator(actors);
-	var sequence = new ui.Sequence();
+	var miniIterator = new ui.Iterator(miniActors);
+
 	var STAGGER_DURATION = 150;
 
 	iterator.stagger('start', STAGGER_DURATION, flyup);
+	miniIterator.stagger('start', STAGGER_DURATION, carousel);
 
 	var lockInput = document.getElementById('lock');
 	var navInput = document.getElementById('nav');
@@ -180,8 +202,10 @@
 	    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
 
 	    elements.forEach(transformElements(zIndexing, 1));
+	    minis.forEach(transformElements(zIndexing, 1));
 
 	    iterator.each('start', flyup);
+	    miniIterator.each('start', carousel);
 	};
 
 	document.getElementById('upstream').onclick = function (e) {
@@ -191,8 +215,10 @@
 	    var zIndexing = lockInput.checked ? { 0: 3, 1: 2, 2: 1 } : { 1: 3, 0: 2, 2: 1 };
 
 	    elements.forEach(transformElements(zIndexing, -1));
+	    minis.forEach(transformElements(zIndexing, -1));
 
 	    iterator.each('start', flyup);
+	    miniIterator.each('start', carousel);
 	};
 
 /***/ },
@@ -230,7 +256,7 @@
 
 
 	// module
-	exports.push([module.id, "    * { box-sizing: border-box; }\n\n    body, html {\n      background: #FFF;\n      height: 100vh;\n      padding: 0;\n      margin: 0;\n      overflow: hidden;\n    }\n\n    #nav-container {\n      height: 0px;\n      transition: .25s;\n      width: calc(100% - 100px);\n      margin-left: 50px;\n      background-color: #CCC;\n    }\n\n    #nav-container.nav-is-open {\n      height: 100px;\n      transition: .25s;\n    }\n\n    button {\n      border-radius: 50%;\n      font-size: 15px;\n      padding: 10px;\n      font-weight: 700;\n      line-height: .5;\n      border: 1px solid;\n      cursor: pointer;\n      background-color: deepskyblue;\n      color: white;\n    }\n\n    button:focus {\n      outline: 0;\n    }\n\n    #cards {\n        position: relative;\n        width: calc(100% - 100px);\n        left: 50px;\n        height: 100%;\n    }\n\n    button:active {\n        opacity: .6;\n    }\n\n    .sidebar {\n      width: 50px;\n      position: fixed;\n      display: inline-block;\n      text-align: center;\n      padding: 46px 0;\n      top: -20px;\n      height: 1000px;\n      z-index: 10;\n    }\n\n    .sidebar.downstream {\n      right: 0;\n      box-shadow: -20px 0 25px white inset;\n    }\n\n    .sidebar.upstream {\n      left: 0;\n      box-shadow: 20px 0 25px white inset;\n    }\n\n    .container {\n      padding-top: 40px;\n      width: 100%;\n      overflow-x: hidden;\n    }\n\n    .card {\n      display: inline-block;\n      opacity: 0;\n      box-shadow: 0 5px 5px rgba(0,0,0,.15);\n      background: repeating-linear-gradient(\n        180deg,\n        #eee,\n        #eee 25px,\n        #fff 25px,\n        #fff 50px\n      );\n      position: absolute;\n      width: 50%;\n      height: 800px;\n    }\n\n    .card::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 33px;\n        content: 's';\n    }\n\n    .card.source::before {\n        background: #0F75FF;\n        color: #0F75FF;\n    }", ""]);
+	exports.push([module.id, "    * { box-sizing: border-box; }\n\n    body, html {\n      background: #FFF;\n      height: 100vh;\n      padding: 0;\n      margin: 0;\n      overflow: hidden;\n    }\n\n    .mini {\n      display: inline-block;\n      position: relative;\n      margin: 10px;\n      height: 80px;\n      width: 100px;\n      background-color: #FFF;\n      box-shadow: 0 5px 5px rgba(0,0,0,.15);\n    }\n\n    .mini::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 15px;\n        content: ' ';\n    }\n\n    .mini.source::before {\n        background: #0F75FF;\n    }\n\n    #nav-view {\n      width: 200px;\n      overflow-y: hidden;\n      overflow-x: auto;\n      height: 100%;\n    }\n\n    #nav-container {\n      height: 0px;\n      transition: .25s;\n      width: calc(100% - 100px);\n      margin-left: 50px;\n      background-color: #CCC;\n      overflow: hidden;\n    }\n\n    #nav-container.nav-is-open {\n      height: 150px;\n      transition: .25s;\n    }\n\n    button {\n      border-radius: 50%;\n      font-size: 15px;\n      padding: 10px;\n      font-weight: 700;\n      line-height: .5;\n      border: 1px solid;\n      cursor: pointer;\n      background-color: deepskyblue;\n      color: white;\n    }\n\n    button:focus {\n      outline: 0;\n    }\n\n    #cards {\n        position: relative;\n        width: calc(100% - 100px);\n        left: 50px;\n        height: 100%;\n    }\n\n    button:active {\n        opacity: .6;\n    }\n\n    .sidebar {\n      width: 50px;\n      position: fixed;\n      display: inline-block;\n      text-align: center;\n      padding: 46px 0;\n      top: -20px;\n      height: 1000px;\n      z-index: 10;\n    }\n\n    .sidebar.downstream {\n      right: 0;\n      box-shadow: -20px 0 25px white inset;\n    }\n\n    .sidebar.upstream {\n      left: 0;\n      box-shadow: 20px 0 25px white inset;\n    }\n\n    .container {\n      padding-top: 40px;\n      width: 100%;\n      overflow-x: hidden;\n    }\n\n    .card {\n      display: inline-block;\n      opacity: 0;\n      box-shadow: 0 5px 5px rgba(0,0,0,.15);\n      background: repeating-linear-gradient(\n        180deg,\n        #eee,\n        #eee 25px,\n        #fff 25px,\n        #fff 50px\n      );\n      position: absolute;\n      width: 50%;\n      height: 800px;\n    }\n\n    .card::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 33px;\n        content: ' ';\n    }\n\n    .card.source::before {\n        background: #0F75FF;\n        color: #0F75FF;\n    }", ""]);
 
 	// exports
 

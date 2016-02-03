@@ -8,16 +8,49 @@
       overflow: hidden;
     }
 
+    .mini {
+      display: inline-block;
+      position: relative;
+      margin: 10px;
+      height: 80px;
+      width: 100px;
+      background-color: #FFF;
+      box-shadow: 0 5px 5px rgba(0,0,0,.15);
+    }
+
+    .mini::before {
+        width: 100%;
+        position: absolute;
+        left: 0;
+        right: 0;
+        background: #999;
+        color: #999;
+        height: 15px;
+        content: ' ';
+    }
+
+    .mini.source::before {
+        background: #0F75FF;
+    }
+
+    #nav-view {
+      width: 200px;
+      overflow-y: hidden;
+      overflow-x: auto;
+      height: 100%;
+    }
+
     #nav-container {
       height: 0px;
       transition: .25s;
       width: calc(100% - 100px);
       margin-left: 50px;
       background-color: #CCC;
+      overflow: hidden;
     }
 
     #nav-container.nav-is-open {
-      height: 100px;
+      height: 150px;
       transition: .25s;
     }
 
@@ -99,7 +132,7 @@
         background: #999;
         color: #999;
         height: 33px;
-        content: 's';
+        content: ' ';
     }
 
     .card.source::before {
