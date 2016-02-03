@@ -52,14 +52,10 @@
 	var FLYUP_DURATION = 500;
 	var FLYUP_EASE = 'easeInOut';
 
-	var source;
 	var div = function (i) {
 	    var e = document.createElement('div');
 	    e.className = i.depth === 0 ? 'card source' : 'card';
 	    e.setAttribute(DATA_PROP, i.depth);
-	    if (i.depth === 0) {
-	        source = e;
-	    }
 	    return e;
 	},
 	    relations = [{ depth: -4 }, { depth: -3 }, { depth: -2 }, { depth: -1 }, { depth: 0 }, { depth: 1 }, { depth: 2 }, { depth: 3 }, { depth: 4 }, { depth: 5 }, { depth: 6 }];
@@ -78,12 +74,8 @@
 	        x: {
 	            to: function (e) {
 	                var depth = parseInt(e.element.getAttribute(DATA_PROP));
-	                var width = parseInt(ui.css.get(e.element, 'width'));
-	                return depth * width;
+	                return depth * 100 + '%';
 	            }
-	        },
-	        left: {
-	            to: 0
 	        },
 	        y: {
 	            to: function (t) {
@@ -115,9 +107,8 @@
 
 	var actors = elements.map(function (e) {
 	    var depth = parseInt(e.getAttribute(DATA_PROP));
-	    var width = parseInt(ui.css.get(e, 'width'));
 	    var values = {
-	        x: depth * width,
+	        x: depth * 100 + '%',
 	        y: 100,
 	        opacity: 0,
 	        zIndex: depth == 0 || depth == 1 ? 1 : 0,
@@ -132,32 +123,30 @@
 	    return actor;
 	});
 
-	var moveDone = new ui.Tween({
-	    values: {
-	        left: function (e) {
-	            var depth = parseInt(e.element.getAttribute(DATA_PROP));
-	            return depth * 50 + '%';
-	        },
-	        x: 0
-	    }
-	});
-
 	var iterator = new ui.Iterator(actors);
 	var sequence = new ui.Sequence();
 	var STAGGER_DURATION = 150;
 
 	iterator.stagger('start', STAGGER_DURATION, flyup);
 
-	setTimeout(function () {
-	    iterator.each('start', moveDone);
-	}, elements.length * STAGGER_DURATION + FLYUP_DURATION);
-
-	var input = document.getElementById('lock');
+	var lockInput = document.getElementById('lock');
 	var navInput = document.getElementById('nav');
 	var navView = document.getElementById('nav-view');
 
 	navInput.onchange = function () {
 	    navView.className = navInput.checked ? 'nav-is-open' : '';
+	};
+
+	lockInput.onchange = function () {
+	    if (!lockInput.checked) {
+	        var leftIndex = elements.reduce(function (p, n, i) {
+	            return n.getAttribute(DATA_PROP) == 0 ? i : p;
+	        }, 0);
+	        elements.forEach(function (e, i) {
+	            return e.setAttribute(DATA_PROP, i - leftIndex);
+	        });
+	        iterator.each('start', flyup);
+	    }
 	};
 
 	function updateList(element, depth, zIndex) {
@@ -173,7 +162,7 @@
 	        var depth,
 	            currentDepth = parseInt(i.getAttribute(DATA_PROP));
 
-	        if (input.checked && (currentDepth == 0 || currentDepth == 1)) {
+	        if (lockInput.checked && (currentDepth == 0 || currentDepth == 1)) {
 	            depth = currentDepth == 1 ? currentDepth - 2 : 0;
 	        } else {
 	            depth = currentDepth - 1;
@@ -185,10 +174,6 @@
 	    });
 
 	    iterator.each('start', flyup);
-
-	    setTimeout(function () {
-	        iterator.each('start', moveDone);
-	    }, FLYUP_DURATION);
 	};
 
 	document.getElementById('upstream').onclick = function (e) {
@@ -199,22 +184,18 @@
 	        var depth,
 	            currentDepth = parseInt(i.getAttribute(DATA_PROP));
 
-	        if (input.checked && (currentDepth == 0 || currentDepth == -1)) {
+	        if (lockInput.checked && (currentDepth == 0 || currentDepth == -1)) {
 	            depth = currentDepth == -1 ? currentDepth + 2 : 0;
 	        } else {
 	            depth = currentDepth + 1;
 	        }
 
-	        var zIndexing = input.checked ? { 0: 3, 1: 2, 2: 1 } : { 1: 3, 0: 2, 2: 1 };
+	        var zIndexing = lockInput.checked ? { 0: 3, 1: 2, 2: 1 } : { 1: 3, 0: 2, 2: 1 };
 
 	        updateList(i, depth, zIndexing[depth] || 0);
 	    });
 
 	    iterator.each('start', flyup);
-
-	    setTimeout(function () {
-	        iterator.each('start', moveDone);
-	    }, FLYUP_DURATION);
 	};
 
 /***/ },
@@ -252,7 +233,7 @@
 
 
 	// module
-	exports.push([module.id, "    * { box-sizing: border-box; }\n\n    body, html {\n      background: #FFF;\n      height: 100vh;\n      padding: 0;\n      margin: 0;\n    }\n\n    #nav-view {\n      display: none;\n      height: 100px;\n      width: calc(100% - 100px);\n      margin-left: 50px;\n      border: 1px solid #000;\n    }\n\n    #nav-view.nav-is-open {\n      display: block;\n    }\n\n    button {\n      border-radius: 50%;\n      font-size: 15px;\n      padding: 10px;\n      font-weight: 700;\n      line-height: .5;\n      border: 1px solid;\n      cursor: pointer;\n      background-color: deepskyblue;\n      color: white;\n    }\n\n    #cards {\n        position: relative;\n        width: calc(100% - 100px);\n        left: 50px;\n        height: 100%;\n    }\n\n    button:active {\n        opacity: .6;\n    }\n\n    .sidebar {\n      width: 50px;\n      position: fixed;\n      display: inline-block;\n      text-align: center;\n      padding: 46px 0;\n      top: -20px;\n      height: 1000px;\n      z-index: 10;\n    }\n\n    .sidebar.downstream {\n      right: 0;\n      box-shadow: -20px 0 25px white inset;\n    }\n\n    .sidebar.upstream {\n      left: 0;\n      box-shadow: 20px 0 25px white inset;\n    }\n\n    .container {\n      padding-top: 40px;\n      width: 100%;\n      overflow-x: hidden;\n    }\n\n    .card {\n      display: inline-block;\n      opacity: 0;\n      box-shadow: 0 5px 5px rgba(0,0,0,.15);\n      background: repeating-linear-gradient(\n        180deg,\n        #eee,\n        #eee 25px,\n        #fff 25px,\n        #fff 50px\n      );\n      position: absolute;\n      z-index: 0;\n      width: 50%;\n      height: 800px;\n    }\n\n    .card::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 33px;\n        content: 's';\n    }\n\n    .card.source::before {\n        background: #0F75FF;\n        color: #0F75FF;\n    }", ""]);
+	exports.push([module.id, "    * { box-sizing: border-box; }\n\n    body, html {\n      background: #FFF;\n      height: 100vh;\n      padding: 0;\n      margin: 0;\n      overflow-x: hidden;\n    }\n\n    #nav-view {\n      height: 0px;\n      transition: .25s;\n      width: calc(100% - 100px);\n      margin-left: 50px;\n      background-color: #CCC;\n    }\n\n    #nav-view.nav-is-open {\n      height: 100px;\n      transition: .25s;\n    }\n\n    button {\n      border-radius: 50%;\n      font-size: 15px;\n      padding: 10px;\n      font-weight: 700;\n      line-height: .5;\n      border: 1px solid;\n      cursor: pointer;\n      background-color: deepskyblue;\n      color: white;\n    }\n\n    #cards {\n        position: relative;\n        width: calc(100% - 100px);\n        left: 50px;\n        height: 100%;\n    }\n\n    button:active {\n        opacity: .6;\n    }\n\n    .sidebar {\n      width: 50px;\n      position: fixed;\n      display: inline-block;\n      text-align: center;\n      padding: 46px 0;\n      top: -20px;\n      height: 1000px;\n      z-index: 10;\n    }\n\n    .sidebar.downstream {\n      right: 0;\n      box-shadow: -20px 0 25px white inset;\n    }\n\n    .sidebar.upstream {\n      left: 0;\n      box-shadow: 20px 0 25px white inset;\n    }\n\n    .container {\n      padding-top: 40px;\n      width: 100%;\n    }\n\n    .card {\n      display: inline-block;\n      opacity: 0;\n      box-shadow: 0 5px 5px rgba(0,0,0,.15);\n      background: repeating-linear-gradient(\n        180deg,\n        #eee,\n        #eee 25px,\n        #fff 25px,\n        #fff 50px\n      );\n      position: absolute;\n      z-index: 0;\n      width: 50%;\n      height: 800px;\n    }\n\n    .card::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 33px;\n        content: 's';\n    }\n\n    .card.source::before {\n        background: #0F75FF;\n        color: #0F75FF;\n    }", ""]);
 
 	// exports
 
