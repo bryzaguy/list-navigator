@@ -108,7 +108,7 @@ lockInput.onchange = () => {
     var zIndexing = { 0: 3, 1: 2, '-1': 1 };
     if (!lockInput.checked) {
         var leftIndex = elements.reduce((p, n, i) => n.getAttribute(DATA_PROP) == 0 ? i : p, 0);
-        elements.forEach((e, i) => updateElement(e, i - leftIndex, zIndexing[i - leftIndex]));
+        elements.forEach((e, i) => updateElement(e, i - leftIndex, zIndexing[i - leftIndex] || 0));
         iterator.each('start', flyup);
     }
 }
