@@ -138,18 +138,19 @@
 	};
 
 	lockInput.onchange = function () {
+	    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
 	    if (!lockInput.checked) {
 	        var leftIndex = elements.reduce(function (p, n, i) {
 	            return n.getAttribute(DATA_PROP) == 0 ? i : p;
 	        }, 0);
 	        elements.forEach(function (e, i) {
-	            return e.setAttribute(DATA_PROP, i - leftIndex);
+	            return updateElement(e, i - leftIndex, zIndexing[i - leftIndex]);
 	        });
 	        iterator.each('start', flyup);
 	    }
 	};
 
-	function updateList(element, depth, zIndex) {
+	function updateElement(element, depth, zIndex) {
 	    element.setAttribute(DATA_PROP, depth);
 	    ui.css.set(element, 'z-index', zIndex);
 	}
@@ -170,7 +171,7 @@
 
 	        var zIndexing = { 0: 3, 1: 2, '-1': 1 };
 
-	        updateList(i, depth, zIndexing[depth] || 0);
+	        updateElement(i, depth, zIndexing[depth] || 0);
 	    });
 
 	    iterator.each('start', flyup);
@@ -192,7 +193,7 @@
 
 	        var zIndexing = lockInput.checked ? { 0: 3, 1: 2, 2: 1 } : { 1: 3, 0: 2, 2: 1 };
 
-	        updateList(i, depth, zIndexing[depth] || 0);
+	        updateElement(i, depth, zIndexing[depth] || 0);
 	    });
 
 	    iterator.each('start', flyup);

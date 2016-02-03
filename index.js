@@ -105,14 +105,15 @@ navInput.onchange = () => {
 };
 
 lockInput.onchange = () => {
+    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
     if (!lockInput.checked) {
         var leftIndex = elements.reduce((p, n, i) => n.getAttribute(DATA_PROP) == 0 ? i : p, 0);
-        elements.forEach((e, i) => e.setAttribute(DATA_PROP, i - leftIndex));
+        elements.forEach((e, i) => updateElement(e, i - leftIndex, zIndexing[i - leftIndex]));
         iterator.each('start', flyup);
     }
 }
 
-function updateList (element, depth, zIndex) {
+function updateElement (element, depth, zIndex) {
     element.setAttribute(DATA_PROP, depth);
     ui.css.set(element, 'z-index', zIndex);
 }
@@ -132,7 +133,7 @@ document.getElementById('downstream').onclick = (e) => {
 
         var zIndexing = { 0: 3, 1: 2, '-1': 1 };
 
-        updateList(i, depth, zIndexing[depth] || 0);
+        updateElement(i, depth, zIndexing[depth] || 0);
     });
 
     iterator.each('start', flyup);
@@ -155,7 +156,7 @@ document.getElementById('upstream').onclick = (e) => {
             { 0: 3, 1: 2, 2: 1 } :
             { 1: 3, 0: 2, 2: 1 };
 
-        updateList(i, depth, zIndexing[depth] || 0);
+        updateElement(i, depth, zIndexing[depth] || 0);
     });
     
     iterator.each('start', flyup);
