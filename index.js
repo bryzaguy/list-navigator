@@ -98,10 +98,10 @@ iterator.stagger('start', STAGGER_DURATION, flyup);
 
 var lockInput = document.getElementById('lock');
 var navInput = document.getElementById('nav');
-var navView = document.getElementById('nav-view');
+var navContainer = document.getElementById('nav-container');
 
 navInput.onchange = () => {
-    navView.className = navInput.checked ? 'nav-is-open' : '';
+    navContainer.className = navInput.checked ? 'nav-is-open' : '';
 };
 
 lockInput.onchange = () => {
@@ -118,23 +118,31 @@ function updateElement (element, depth, zIndex) {
     ui.css.set(element, 'z-index', zIndex);
 }
 
+function getDepth(currentDepth, direction) {
+    var jump = Math.abs(direction + direction) * -direction;
+    console.log(jump);
+    if (lockInput.checked && (currentDepth == 0 || currentDepth == direction)) {
+        return currentDepth == direction ? currentDepth + jump : 0;
+    } else {
+        return currentDepth - direction;
+    }
+}
+
+function transformElements (zIndexing, direction) {
+    return (i) => {
+        var depth = getDepth(parseInt(i.getAttribute(DATA_PROP)), direction);
+
+        updateElement(i, depth, zIndexing[depth] || 0);
+    }
+}
+
 document.getElementById('downstream').onclick = (e) => {
     e.stopPropagation();
     e.preventDefault();
+
+    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
     
-    elements.forEach((i) => {
-        var depth, currentDepth = parseInt(i.getAttribute(DATA_PROP));
-
-        if (lockInput.checked && (currentDepth == 0 || currentDepth == 1)) {
-            depth = currentDepth == 1 ? currentDepth - 2 : 0;
-        } else {
-            depth = currentDepth - 1;
-        }
-
-        var zIndexing = { 0: 3, 1: 2, '-1': 1 };
-
-        updateElement(i, depth, zIndexing[depth] || 0);
-    });
+    elements.forEach(transformElements(zIndexing, 1));
 
     iterator.each('start', flyup);
 };
@@ -142,22 +150,12 @@ document.getElementById('downstream').onclick = (e) => {
 document.getElementById('upstream').onclick = (e) => {
     e.stopPropagation();
     e.preventDefault();
-    
-    elements.forEach((i) => {        
-        var depth, currentDepth = parseInt(i.getAttribute(DATA_PROP));
 
-        if (lockInput.checked && (currentDepth == 0 || currentDepth == -1)) {
-            depth = currentDepth == -1 ? currentDepth + 2 : 0;
-        } else {
-            depth = currentDepth + 1;
-        }
+    var zIndexing = lockInput.checked ?
+        { 0: 3, 1: 2, 2: 1 } :
+        { 1: 3, 0: 2, 2: 1 };
 
-        var zIndexing = lockInput.checked ?
-            { 0: 3, 1: 2, 2: 1 } :
-            { 1: 3, 0: 2, 2: 1 };
-
-        updateElement(i, depth, zIndexing[depth] || 0);
-    });
+    elements.forEach(transformElements(zIndexing, -1));
     
     iterator.each('start', flyup);
 

@@ -131,10 +131,10 @@
 
 	var lockInput = document.getElementById('lock');
 	var navInput = document.getElementById('nav');
-	var navView = document.getElementById('nav-view');
+	var navContainer = document.getElementById('nav-container');
 
 	navInput.onchange = function () {
-	    navView.className = navInput.checked ? 'nav-is-open' : '';
+	    navContainer.className = navInput.checked ? 'nav-is-open' : '';
 	};
 
 	lockInput.onchange = function () {
@@ -155,24 +155,31 @@
 	    ui.css.set(element, 'z-index', zIndex);
 	}
 
+	function getDepth(currentDepth, direction) {
+	    var jump = Math.abs(direction + direction) * -direction;
+	    console.log(jump);
+	    if (lockInput.checked && (currentDepth == 0 || currentDepth == direction)) {
+	        return currentDepth == direction ? currentDepth + jump : 0;
+	    } else {
+	        return currentDepth - direction;
+	    }
+	}
+
+	function transformElements(zIndexing, direction) {
+	    return function (i) {
+	        var depth = getDepth(parseInt(i.getAttribute(DATA_PROP)), direction);
+
+	        updateElement(i, depth, zIndexing[depth] || 0);
+	    };
+	}
+
 	document.getElementById('downstream').onclick = function (e) {
 	    e.stopPropagation();
 	    e.preventDefault();
 
-	    elements.forEach(function (i) {
-	        var depth,
-	            currentDepth = parseInt(i.getAttribute(DATA_PROP));
+	    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
 
-	        if (lockInput.checked && (currentDepth == 0 || currentDepth == 1)) {
-	            depth = currentDepth == 1 ? currentDepth - 2 : 0;
-	        } else {
-	            depth = currentDepth - 1;
-	        }
-
-	        var zIndexing = { 0: 3, 1: 2, '-1': 1 };
-
-	        updateElement(i, depth, zIndexing[depth] || 0);
-	    });
+	    elements.forEach(transformElements(zIndexing, 1));
 
 	    iterator.each('start', flyup);
 	};
@@ -181,20 +188,9 @@
 	    e.stopPropagation();
 	    e.preventDefault();
 
-	    elements.forEach(function (i) {
-	        var depth,
-	            currentDepth = parseInt(i.getAttribute(DATA_PROP));
+	    var zIndexing = lockInput.checked ? { 0: 3, 1: 2, 2: 1 } : { 1: 3, 0: 2, 2: 1 };
 
-	        if (lockInput.checked && (currentDepth == 0 || currentDepth == -1)) {
-	            depth = currentDepth == -1 ? currentDepth + 2 : 0;
-	        } else {
-	            depth = currentDepth + 1;
-	        }
-
-	        var zIndexing = lockInput.checked ? { 0: 3, 1: 2, 2: 1 } : { 1: 3, 0: 2, 2: 1 };
-
-	        updateElement(i, depth, zIndexing[depth] || 0);
-	    });
+	    elements.forEach(transformElements(zIndexing, -1));
 
 	    iterator.each('start', flyup);
 	};
@@ -234,7 +230,7 @@
 
 
 	// module
-	exports.push([module.id, "    * { box-sizing: border-box; }\n\n    body, html {\n      background: #FFF;\n      height: 100vh;\n      padding: 0;\n      margin: 0;\n      overflow: hidden;\n    }\n\n    #nav-view {\n      height: 0px;\n      transition: .25s;\n      width: calc(100% - 100px);\n      margin-left: 50px;\n      background-color: #CCC;\n    }\n\n    #nav-view.nav-is-open {\n      height: 100px;\n      transition: .25s;\n    }\n\n    button {\n      border-radius: 50%;\n      font-size: 15px;\n      padding: 10px;\n      font-weight: 700;\n      line-height: .5;\n      border: 1px solid;\n      cursor: pointer;\n      background-color: deepskyblue;\n      color: white;\n    }\n\n    button:focus {\n      outline: 0;\n    }\n\n    #cards {\n        position: relative;\n        width: calc(100% - 100px);\n        left: 50px;\n        height: 100%;\n    }\n\n    button:active {\n        opacity: .6;\n    }\n\n    .sidebar {\n      width: 50px;\n      position: fixed;\n      display: inline-block;\n      text-align: center;\n      padding: 46px 0;\n      top: -20px;\n      height: 1000px;\n      z-index: 10;\n    }\n\n    .sidebar.downstream {\n      right: 0;\n      box-shadow: -20px 0 25px white inset;\n    }\n\n    .sidebar.upstream {\n      left: 0;\n      box-shadow: 20px 0 25px white inset;\n    }\n\n    .container {\n      padding-top: 40px;\n      width: 100%;\n      overflow-x: hidden;\n    }\n\n    .card {\n      display: inline-block;\n      opacity: 0;\n      box-shadow: 0 5px 5px rgba(0,0,0,.15);\n      background: repeating-linear-gradient(\n        180deg,\n        #eee,\n        #eee 25px,\n        #fff 25px,\n        #fff 50px\n      );\n      position: absolute;\n      z-index: 0;\n      width: 50%;\n      height: 800px;\n    }\n\n    .card::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 33px;\n        content: 's';\n    }\n\n    .card.source::before {\n        background: #0F75FF;\n        color: #0F75FF;\n    }", ""]);
+	exports.push([module.id, "    * { box-sizing: border-box; }\n\n    body, html {\n      background: #FFF;\n      height: 100vh;\n      padding: 0;\n      margin: 0;\n      overflow: hidden;\n    }\n\n    #nav-container {\n      height: 0px;\n      transition: .25s;\n      width: calc(100% - 100px);\n      margin-left: 50px;\n      background-color: #CCC;\n    }\n\n    #nav-container.nav-is-open {\n      height: 100px;\n      transition: .25s;\n    }\n\n    button {\n      border-radius: 50%;\n      font-size: 15px;\n      padding: 10px;\n      font-weight: 700;\n      line-height: .5;\n      border: 1px solid;\n      cursor: pointer;\n      background-color: deepskyblue;\n      color: white;\n    }\n\n    button:focus {\n      outline: 0;\n    }\n\n    #cards {\n        position: relative;\n        width: calc(100% - 100px);\n        left: 50px;\n        height: 100%;\n    }\n\n    button:active {\n        opacity: .6;\n    }\n\n    .sidebar {\n      width: 50px;\n      position: fixed;\n      display: inline-block;\n      text-align: center;\n      padding: 46px 0;\n      top: -20px;\n      height: 1000px;\n      z-index: 10;\n    }\n\n    .sidebar.downstream {\n      right: 0;\n      box-shadow: -20px 0 25px white inset;\n    }\n\n    .sidebar.upstream {\n      left: 0;\n      box-shadow: 20px 0 25px white inset;\n    }\n\n    .container {\n      padding-top: 40px;\n      width: 100%;\n      overflow-x: hidden;\n    }\n\n    .card {\n      display: inline-block;\n      opacity: 0;\n      box-shadow: 0 5px 5px rgba(0,0,0,.15);\n      background: repeating-linear-gradient(\n        180deg,\n        #eee,\n        #eee 25px,\n        #fff 25px,\n        #fff 50px\n      );\n      position: absolute;\n      width: 50%;\n      height: 800px;\n    }\n\n    .card::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 33px;\n        content: 's';\n    }\n\n    .card.source::before {\n        background: #0F75FF;\n        color: #0F75FF;\n    }", ""]);
 
 	// exports
 
