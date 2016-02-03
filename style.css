@@ -87,7 +87,6 @@
         #fff 50px
       );
       position: absolute;
-      z-index: 0;
       width: 50%;
       height: 800px;
     }
