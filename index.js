@@ -122,6 +122,7 @@ var smallCards = {
 };
 
 var hoverSmall = new ui.Tween({
+    duration: 150,
     values: {
         opacity: 1
     }
@@ -187,7 +188,10 @@ iterator.stagger('start', STAGGER_DURATION, flyup);
 miniIterator.stagger('start', STAGGER_DURATION, carousel);
 
 setTimeout(() => {
-    navContainer.className = ''
+    navContainer.className = '';
+
+
+
 }, STAGGER_DURATION * minis.length + 200);
 
 navContainer.className = 'nav-is-open';
@@ -273,15 +277,30 @@ upstream.onmouseover = (e) => {
 
 navContainer.onmouseover = (event) => {
     var e = event.toElement || event.relatedTarget;
-    miniIterator.each('start', carousel)
-    if (e.className.indexOf('mini')) {
+    miniIterator.each('start', carousel.extend({duration: 150}));
+
+    if (e.className.indexOf('mini') > -1) {
         var actor = miniActors.filter((a) => a.element === e)[0];
         actor.start(hoverSmall);
     }
 };
 
+navContainer.onclick = (event) => {
+    var e = event.target;
+    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
+    if (e.className.indexOf('mini') > -1) {
+        e.setAttribute(DATA_PROP, 0);
+        var index = minis.indexOf(e);
+        orderFrom(minis, index, zIndexing);
+        orderFrom(elements, index, zIndexing);
+
+        iterator.each('start', flyup);
+        miniIterator.each('start', carousel);
+    }
+};
+
 navContainer.onmouseout = (event) => {
-    clearTimeout(outTimer);
+    clearTimeout(outTimer); 
     var e = event.toElement || event.relatedTarget;
 
     while(e && e.parentNode && e.parentNode != window) {
