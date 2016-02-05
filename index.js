@@ -3,13 +3,13 @@ var style = require('./style.css');
 var ui = require('popmotion');
 var DATA_PROP = 'data-depth';
 var FLYUP_DURATION = 500;
-var STAGGER_DURATION = 150;
+var STAGGER_DURATION = 100;
 var FLYUP_EASE = 'easeInOut';
 
 
-/////// TODO: CLOSE NAV AFTER INTRO ANIMATION.  
-///////       OPEN NAV ON BUTTON HOVER.
-
+///////       HOVER MINI ANIMATES
+///////       CLICK MINI GOES UP/DOWNSTREAM
+///////       WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
 
 var div = (i) => {
         var e = document.createElement('div');
@@ -64,21 +64,15 @@ var absoluteCards = {
     }
 };
 
-var relativeCards = {
-    values: {
-        x: (e) => {
-            var depth = parseInt(e.element.getAttribute(DATA_PROP));
-            return (depth * 1) + '%';
-            return 0;
-        }
-    }
-}
-
 var largeCards = {
     values: {
         borderRight: (e) => {
             var depth = parseInt(e.element.getAttribute(DATA_PROP));
             return depth == 0 ? '2px solid white' : '0px solid white';
+        },
+        y: function(t) {
+            var d = t.element.getAttribute(DATA_PROP);
+            return d == 0 || d == 1 ? 0 : 48;
         },
         boxShadow: (e) => {
             var depth = parseInt(e.element.getAttribute(DATA_PROP));
@@ -90,33 +84,48 @@ var largeCards = {
                 default:
                     return '0 5px 5px rgba(0,0,0,.15)';
             }
-        },
-        y: function(t) {
-            var d = t.element.getAttribute(DATA_PROP);
-            return d == 0 || d == 1 ? 0 : 48;
         }
     }
 };
 
 var smallCards = {
     values: {
+        borderLeft: {
+            ease: new ui.Easing(function(progress) {
+                return Math.round(progress);
+            }),
+            to: (e) => {
+                var depth = parseInt(e.element.getAttribute(DATA_PROP));
+                return depth == 1 ? '1px solid white' : '0px solid white';
+            }
+        },
         boxShadow: (e) => {
             var depth = parseInt(e.element.getAttribute(DATA_PROP));
             switch (depth) {
                 case 1:
-                    return '2px 5px 7px rgba(0,0,0,0.25)';
+                    return '3px 5px 7px rgba(0,0,0,0.25)';
                 case 0:
-                    return '-2px 5px 7px rgba(0,0,0,0.25)';
+                    return '-3px 5px 7px rgba(0,0,0,0.25)';
                 default:
                     return '0 2px 2px rgba(0,0,0,.15)';
             }
         },
-        y: function(t) {
+        transformOrigin: function(t) {
             var d = t.element.getAttribute(DATA_PROP);
-            return d == 0 || d == 1 ? 0 : 5;
+            return d > 0 ? '0% 100%' : '100% 100%';
+        },
+        scale: function(t) {
+            var d = t.element.getAttribute(DATA_PROP);
+            return d == 0 || d == 1 ? 1 : .95;
         }
     }
 };
+
+var hoverSmall = new ui.Tween({
+    values: {
+        opacity: 1
+    }
+});
 
 var base = new ui.Tween({
     ease: FLYUP_EASE,
@@ -128,7 +137,8 @@ var defaults = {
         opacity: (e) => {
             var depth = parseInt(e.element.getAttribute(DATA_PROP));
             return depth == 0 || depth == 1 ? 1 : .5;
-        }
+        },
+        y: 0
     }
 };
 
@@ -148,6 +158,11 @@ var toActors = (y, e) => {
         y: y,
         opacity: 0,
         zIndex: depth == 0 || depth == 1 ? 1 : 0,
+        transformOrigin: function(t) {
+            var d = t.element.getAttribute(DATA_PROP);
+            return d > 0 ? '0% 0%' : '100% 0%';
+        },
+        scale: 1,
         boxShadow: '0 5px 5px rgba(0,0,0,.15)'
     };
     
@@ -165,32 +180,43 @@ var iterator = new ui.Iterator(actors);
 var miniActors = minis.map(toActors.bind(null, 50));
 var miniIterator = new ui.Iterator(miniActors);
 
+var lockInput = document.getElementById('lock');
+var navContainer = document.getElementById('nav-container');
 
 iterator.stagger('start', STAGGER_DURATION, flyup);
 miniIterator.stagger('start', STAGGER_DURATION, carousel);
 
-var lockInput = document.getElementById('lock');
-var navInput = document.getElementById('nav');
-var navContainer = document.getElementById('nav-container');
+setTimeout(() => {
+    navContainer.className = ''
+}, STAGGER_DURATION * minis.length + 200);
 
-navInput.onchange = () => {
-    navContainer.className = navInput.checked ? 'nav-is-open' : '';
-};
-
-navInput.checked = true;
 navContainer.className = 'nav-is-open';
 
 lockInput.onchange = () => {
     var zIndexing = { 0: 3, 1: 2, '-1': 1 };
     if (!lockInput.checked) {
-        var leftIndex = elements.reduce((p, n, i) => n.getAttribute(DATA_PROP) == 0 ? i : p, 0);
-        elements.forEach((e, i) => updateElement(e, i - leftIndex, zIndexing[i - leftIndex] || 0));
-        iterator.each('start', flyup);
+        navContainer.className = 'nav-is-open';
 
-        var miniLeftIndex = elements.reduce((p, n, i) => n.getAttribute(DATA_PROP) == 0 ? i : p, 0);
-        minis.forEach((e, i) => updateElement(e, i - miniLeftIndex, zIndexing[i - miniLeftIndex] || 0));
+        orderUnlocked(elements, zIndexing);
+        orderUnlocked(minis, zIndexing);
+
+        iterator.each('start', flyup);
         miniIterator.each('start', carousel);
     }
+}
+
+function orderUnlocked (items, zIndexing) {
+    var left = items.reduce((p, n, i) => {
+        return n.getAttribute(DATA_PROP) == 0 ? i : p;
+    }, 0);
+
+    orderFrom(items, left, zIndexing);
+}
+
+function orderFrom (items, index, zIndexing) {
+    items.forEach((e, i) => {
+        updateElement(e, i - index, zIndexing[i - index] || 0);
+    });
 }
 
 function updateElement (element, depth, zIndex) {
@@ -198,9 +224,8 @@ function updateElement (element, depth, zIndex) {
     ui.css.set(element, 'z-index', zIndex);
 }
 
-function getDepth(currentDepth, direction) {
+function getDepth (currentDepth, direction) {
     var jump = Math.abs(direction + direction) * -direction;
-    console.log(jump);
     if (lockInput.checked && (currentDepth == 0 || currentDepth == direction)) {
         return currentDepth == direction ? currentDepth + jump : 0;
     } else {
@@ -216,30 +241,67 @@ function transformElements (zIndexing, direction) {
     }
 }
 
-document.getElementById('downstream').onclick = (e) => {
+var downstream = document.getElementById('downstream');
+var upstream = document.getElementById('upstream');
+
+function move (e, zIndexing, direction) {
     e.stopPropagation();
     e.preventDefault();
 
-    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
-    
-    elements.forEach(transformElements(zIndexing, 1));
-    minis.forEach(transformElements(zIndexing, 1));
+    elements.forEach(transformElements(zIndexing, direction));
+    minis.forEach(transformElements(zIndexing, direction));
 
     iterator.each('start', flyup);
     miniIterator.each('start', carousel);
+}
+
+downstream.onclick = (e) => {
+    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
+    move(e, zIndexing, 1);
 };
 
-document.getElementById('upstream').onclick = (e) => {
-    e.stopPropagation();
-    e.preventDefault();
+var outTimer;
+downstream.onmouseover = (e) => {
+    clearTimeout(outTimer);
+    navContainer.className = 'nav-is-open';
+};
 
+upstream.onmouseover = (e) => {
+    clearTimeout(outTimer);
+    navContainer.className = 'nav-is-open';
+};
+
+navContainer.onmouseover = (event) => {
+    var e = event.toElement || event.relatedTarget;
+    miniIterator.each('start', carousel)
+    if (e.className.indexOf('mini')) {
+        var actor = miniActors.filter((a) => a.element === e)[0];
+        actor.start(hoverSmall);
+    }
+};
+
+navContainer.onmouseout = (event) => {
+    clearTimeout(outTimer);
+    var e = event.toElement || event.relatedTarget;
+
+    while(e && e.parentNode && e.parentNode != window) {
+        e = e.parentNode;
+        if (e == navContainer) {
+            if(e.preventDefault) e.preventDefault();
+            return;
+        }
+    }
+
+    outTimer = setTimeout(() => {
+        navContainer.className = '';
+    }, 200);
+};
+
+upstream.onclick = (e) => {
     var zIndexing = lockInput.checked ?
         { 0: 3, 1: 2, 2: 1 } :
         { 1: 3, 0: 2, 2: 1 };
 
-    elements.forEach(transformElements(zIndexing, -1));
-    minis.forEach(transformElements(zIndexing, -1));
-    
-    iterator.each('start', flyup);
-    miniIterator.each('start', carousel);
+    move(e, zIndexing, -1);
 };
+
