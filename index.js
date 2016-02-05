@@ -7,9 +7,9 @@ var FLYUP_DURATION = 500;
 var STAGGER_DURATION = 100;
 var FLYUP_EASE = 'easeInOut';
 
-var hash = window.location.hash;
-var useTopNav = hash.toLowerCase() === '#topnav';
-var useSideNav = hash.toLowerCase() === '#sidenav';
+var search = window.location.search.toLowerCase();
+var useTopNav = search.indexOf('topnav=true') > -1;
+var useSideNav = search.indexOf('sidenav=true') > -1;
 
 ///////       WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
 
