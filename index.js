@@ -6,10 +6,15 @@ var DATA_PROP = 'data-depth';
 var FLYUP_DURATION = 500;
 var STAGGER_DURATION = 100;
 var FLYUP_EASE = 'easeInOut';
+var times = 0;
 
-var search = window.location.search.toLowerCase();
-var useTopNav = search.indexOf('topnav=true') > -1;
-var useSideNav = search.indexOf('sidenav=true') > -1;
+var hash = window.location.hash.toLowerCase();
+var useTopNav = hash.indexOf('topnav') > -1;
+var useSideNav = hash.indexOf('sidenav') > -1;
+
+window.onhashchange = () => {
+    location.reload(); 
+};
 
 ///////       WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
 
