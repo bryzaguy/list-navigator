@@ -1,3 +1,4 @@
+var outTimer;
 var hintcss = require('hint.css/hint.min.css');
 var style = require('./style.css');
 var ui = require('popmotion');
@@ -6,9 +7,11 @@ var FLYUP_DURATION = 500;
 var STAGGER_DURATION = 100;
 var FLYUP_EASE = 'easeInOut';
 
+var hash = window.location.hash;
+var useTopNav = hash.toLowerCase() === '#topnav';
+var useSideNav = hash.toLowerCase() === '#sidenav';
+console.log(hash)
 
-///////       HOVER MINI ANIMATES
-///////       CLICK MINI GOES UP/DOWNSTREAM
 ///////       WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
 
 var div = (i) => {
@@ -41,19 +44,24 @@ var div = (i) => {
         { depth: 6 }
     ];
 
-var elements = relations.map(div),
-    fragment = document.createDocumentFragment(),
-    minis = relations.map(mini),
-    minisFragment = document.createDocumentFragment();
-    
+var minis = [],
+    elements = relations.map(div),
+    fragment = document.createDocumentFragment();
+
 elements.forEach(fragment.appendChild, fragment);
-minis.forEach(minisFragment.appendChild, minisFragment);
 
 document.getElementById('cards')
         .appendChild(fragment);
+    
+if (useTopNav) {
+    minis = relations.map(mini);
+    var minisFragment = document.createDocumentFragment();
+    minis.forEach(minisFragment.appendChild, minisFragment);
 
-document.getElementById('nav-view')
-        .appendChild(minisFragment);
+    document.getElementById('nav-view')
+            .appendChild(minisFragment);
+
+}
 
 var absoluteCards = {
     values: {
@@ -185,21 +193,24 @@ var lockInput = document.getElementById('lock');
 var navContainer = document.getElementById('nav-container');
 
 iterator.stagger('start', STAGGER_DURATION, flyup);
-miniIterator.stagger('start', STAGGER_DURATION, carousel);
 
-setTimeout(() => {
-    navContainer.className = '';
+if (useTopNav) {
+    miniIterator.stagger('start', STAGGER_DURATION, carousel);
 
+    outTimer = setTimeout(() => {
+        navContainer.className = '';
+    }, STAGGER_DURATION * minis.length + 200);
 
+    navContainer.className = 'nav-is-open';
+}
 
-}, STAGGER_DURATION * minis.length + 200);
-
-navContainer.className = 'nav-is-open';
 
 lockInput.onchange = () => {
     var zIndexing = { 0: 3, 1: 2, '-1': 1 };
     if (!lockInput.checked) {
-        navContainer.className = 'nav-is-open';
+        if (useTopNav) {
+            navContainer.className = 'nav-is-open';
+        }
 
         orderUnlocked(elements, zIndexing);
         orderUnlocked(minis, zIndexing);
@@ -260,67 +271,73 @@ function move (e, zIndexing, direction) {
 }
 
 downstream.onclick = (e) => {
+    clearTimeout(outTimer);
     var zIndexing = { 0: 3, 1: 2, '-1': 1 };
     move(e, zIndexing, 1);
 };
 
-var outTimer;
-downstream.onmouseover = (e) => {
-    clearTimeout(outTimer);
-    navContainer.className = 'nav-is-open';
-};
-
-upstream.onmouseover = (e) => {
-    clearTimeout(outTimer);
-    navContainer.className = 'nav-is-open';
-};
-
-navContainer.onmouseover = (event) => {
-    var e = event.toElement || event.relatedTarget;
-    miniIterator.each('start', carousel.extend({duration: 150}));
-
-    if (e.className.indexOf('mini') > -1) {
-        var actor = miniActors.filter((a) => a.element === e)[0];
-        actor.start(hoverSmall);
-    }
-};
-
-navContainer.onclick = (event) => {
-    var e = event.target;
-    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
-    if (e.className.indexOf('mini') > -1) {
-        e.setAttribute(DATA_PROP, 0);
-        var index = minis.indexOf(e);
-        orderFrom(minis, index, zIndexing);
-        orderFrom(elements, index, zIndexing);
-
-        iterator.each('start', flyup);
-        miniIterator.each('start', carousel);
-    }
-};
-
-navContainer.onmouseout = (event) => {
-    clearTimeout(outTimer); 
-    var e = event.toElement || event.relatedTarget;
-
-    while(e && e.parentNode && e.parentNode != window) {
-        e = e.parentNode;
-        if (e == navContainer) {
-            if(e.preventDefault) e.preventDefault();
-            return;
-        }
-    }
-
-    outTimer = setTimeout(() => {
-        navContainer.className = '';
-    }, 200);
-};
-
 upstream.onclick = (e) => {
+    clearTimeout(outTimer);
     var zIndexing = lockInput.checked ?
         { 0: 3, 1: 2, 2: 1 } :
         { 1: 3, 0: 2, 2: 1 };
 
     move(e, zIndexing, -1);
 };
+
+if (useTopNav) {
+
+    downstream.onmouseover = (e) => {
+        clearTimeout(outTimer);
+        navContainer.className = 'nav-is-open';
+    };
+
+    upstream.onmouseover = (e) => {
+        clearTimeout(outTimer);
+        navContainer.className = 'nav-is-open';
+    };
+
+    navContainer.onmouseover = (event) => {
+        var e = event.toElement || event.relatedTarget;
+        miniIterator.each('start', carousel.extend({duration: 150}));
+
+        if (e.className.indexOf('mini') > -1) {
+            var actor = miniActors.filter((a) => a.element === e)[0];
+            actor.start(hoverSmall);
+        }
+    };
+
+    navContainer.onclick = (event) => {
+        clearTimeout(outTimer);
+        var e = event.target;
+        var zIndexing = { 0: 3, 1: 2, '-1': 1 };
+        if (e.className.indexOf('mini') > -1) {
+            e.setAttribute(DATA_PROP, 0);
+            var index = minis.indexOf(e);
+            orderFrom(minis, index, zIndexing);
+            orderFrom(elements, index, zIndexing);
+
+            iterator.each('start', flyup);
+            miniIterator.each('start', carousel);
+        }
+    };
+
+    navContainer.onmouseout = (event) => {
+        clearTimeout(outTimer); 
+        var e = event.toElement || event.relatedTarget;
+
+        while(e && e.parentNode && e.parentNode != window) {
+            e = e.parentNode;
+            if (e == navContainer) {
+                if(e.preventDefault) e.preventDefault();
+                return;
+            }
+        }
+
+        outTimer = setTimeout(() => {
+            navContainer.className = '';
+        }, 200);
+    };
+
+}
 
