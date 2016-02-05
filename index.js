@@ -3,6 +3,8 @@ var hintcss = require('hint.css/hint.min.css');
 var style = require('./style.css');
 var ui = require('popmotion');
 var DATA_PROP = 'data-depth';
+var HOVER_PROP = 'data-hint';
+var HOVER_CLASS = ' hint hint--top-right';
 var FLYUP_DURATION = 500;
 var STAGGER_DURATION = 100;
 var FLYUP_EASE = 'easeInOut';
@@ -18,12 +20,22 @@ window.onhashchange = () => {
 
 ///////       WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
 
-var div = (i) => {
+var hoverDiv = (e, i) => {
+        var eInner = document.createElement('div');
+        eInner.className = 'inner-card';
+        eInner.setAttribute(HOVER_PROP, i.types);
+        e.appendChild(eInner);
+    }, 
+    div = (i) => {
         var e = document.createElement('div');
+        var eInner = document.createElement('div');
         e.className = i.depth === 0 
             ? 'card source'
             : 'card';
         e.setAttribute(DATA_PROP, i.depth);
+
+        hoverDiv(e, i);
+
         return e;
     },
     mini = (i) => {
@@ -32,20 +44,23 @@ var div = (i) => {
             ? 'mini source'
             : 'mini';
         e.setAttribute(DATA_PROP, i.depth);
+
+        hoverDiv(e, i);
+
         return e;
     },
     relations = [
-        { depth: -4 }, 
-        { depth: -3 }, 
-        { depth: -2 },
-        { depth: -1 }, 
-        { depth: 0 }, 
-        { depth: 1 }, 
-        { depth: 2 },
-        { depth: 3 }, 
-        { depth: 4 }, 
-        { depth: 5 }, 
-        { depth: 6 }
+        { depth: -4, types: 'Requirements' }, 
+        { depth: -3, types: 'Requirements, Epics' }, 
+        { depth: -2, types: 'Epics' },
+        { depth: -1, types: 'Epics, Stories' }, 
+        { depth: 0, types: 'Epics, Stories' }, 
+        { depth: 1, types: 'Stories' }, 
+        { depth: 2, types: 'Stories' },
+        { depth: 3, types: 'Stories, Testcases' }, 
+        { depth: 4, types: 'Testcases' }, 
+        { depth: 5, types: 'Defects, Testcases' }, 
+        { depth: 6, types: 'Defects' }
     ];
 
 var minis = [],
@@ -308,7 +323,7 @@ if (useSideNav) {
             },
             y: function(t) {
                 var d = t.element.getAttribute(DATA_PROP);
-                return d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) : 48;
+                return d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) + 20 : 48;
             },
             opacity: (t) => {
                 var depth = parseInt(t.element.getAttribute(DATA_PROP));
@@ -319,13 +334,46 @@ if (useSideNav) {
 
     var handleHover = function handleHover (event) {
         var e = event.toElement || event.relatedTarget;
+        var current = findCurrentElement(elements);
+        var previousElements = elements.filter((i) => 
+            parseInt(i.getAttribute(DATA_PROP)) < parseInt(current.getAttribute(DATA_PROP))
+        );
+
+        function clearSpread() {
+            elements.forEach((e) => {
+                var i = e.firstChild;
+                if (i.className.indexOf(HOVER_CLASS) > -1) {
+                    i.className = i.className.replace(HOVER_CLASS, '');
+                }
+            });
+
+            iterator.each('start', flyup);
+            miniIterator.each('start', carousel);
+            current.onmouseover = null;
+        }
+
         iterator.each('start', sideSpread);
 
-        var current = findCurrentElement(elements);
-        current.onmouseover = function (event) {
-            iterator.each('start', flyup);
-            current.onmouseover = null;
-        };
+        previousElements.forEach((e) => {
+            var i = e.firstChild;
+            if (i.className.indexOf(HOVER_CLASS) < 0) {
+                i.className = i.className + HOVER_CLASS;
+            }
+
+            i.onclick = (ev) => {
+                var zIndexing = { 0: 3, 1: 2, '-1': 1 };
+                var p = ev.target.parentNode;
+                p.setAttribute(DATA_PROP, 0);
+                var index = elements.indexOf(p);
+
+                orderFrom(minis, index, zIndexing);
+                orderFrom(elements, index, zIndexing);
+
+                clearSpread();
+            };
+        });
+
+        current.onmouseover = () => clearSpread();
     };
 
     var leftSide = upstream.parentNode;
@@ -349,7 +397,8 @@ if (useTopNav) {
         var e = event.toElement || event.relatedTarget;
         miniIterator.each('start', carousel.extend({duration: 150}));
 
-        if (e.className.indexOf('mini') > -1) {
+        var p = e.parentNode;
+        if (e.className.indexOf('mini') > -1 || ((e = p) && e.className.indexOf('mini') > -1)) {
             findActor(miniActors, e).start(hoverSmall);
         }
     };
@@ -357,8 +406,9 @@ if (useTopNav) {
     navContainer.onclick = (event) => {
         clearTimeout(outTimer);
         var e = event.target;
+        var p = e.parentNode;
         var zIndexing = { 0: 3, 1: 2, '-1': 1 };
-        if (e.className.indexOf('mini') > -1) {
+        if (e.className.indexOf('mini') > -1 || ((e = p) && e.className.indexOf('mini') > -1)) {
             e.setAttribute(DATA_PROP, 0);
             var index = minis.indexOf(e);
             orderFrom(minis, index, zIndexing);

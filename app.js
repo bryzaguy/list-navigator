@@ -51,6 +51,8 @@
 	var style = __webpack_require__(5);
 	var ui = __webpack_require__(7);
 	var DATA_PROP = 'data-depth';
+	var HOVER_PROP = 'data-hint';
+	var HOVER_CLASS = ' hint hint--top-right';
 	var FLYUP_DURATION = 500;
 	var STAGGER_DURATION = 100;
 	var FLYUP_EASE = 'easeInOut';
@@ -66,19 +68,32 @@
 
 	///////       WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
 
-	var div = function (i) {
+	var hoverDiv = function (e, i) {
+	    var eInner = document.createElement('div');
+	    eInner.className = 'inner-card';
+	    eInner.setAttribute(HOVER_PROP, i.types);
+	    e.appendChild(eInner);
+	},
+	    div = function (i) {
 	    var e = document.createElement('div');
+	    var eInner = document.createElement('div');
 	    e.className = i.depth === 0 ? 'card source' : 'card';
 	    e.setAttribute(DATA_PROP, i.depth);
+
+	    hoverDiv(e, i);
+
 	    return e;
 	},
 	    mini = function (i) {
 	    var e = document.createElement('div');
 	    e.className = i.depth === 0 ? 'mini source' : 'mini';
 	    e.setAttribute(DATA_PROP, i.depth);
+
+	    hoverDiv(e, i);
+
 	    return e;
 	},
-	    relations = [{ depth: -4 }, { depth: -3 }, { depth: -2 }, { depth: -1 }, { depth: 0 }, { depth: 1 }, { depth: 2 }, { depth: 3 }, { depth: 4 }, { depth: 5 }, { depth: 6 }];
+	    relations = [{ depth: -4, types: 'Requirements' }, { depth: -3, types: 'Requirements, Epics' }, { depth: -2, types: 'Epics' }, { depth: -1, types: 'Epics, Stories' }, { depth: 0, types: 'Epics, Stories' }, { depth: 1, types: 'Stories' }, { depth: 2, types: 'Stories' }, { depth: 3, types: 'Stories, Testcases' }, { depth: 4, types: 'Testcases' }, { depth: 5, types: 'Defects, Testcases' }, { depth: 6, types: 'Defects' }];
 
 	var minis = [],
 	    elements = relations.map(div),
@@ -329,7 +344,7 @@
 	            },
 	            y: function (t) {
 	                var d = t.element.getAttribute(DATA_PROP);
-	                return d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) : 48;
+	                return d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) + 20 : 48;
 	            },
 	            opacity: function (t) {
 	                var depth = parseInt(t.element.getAttribute(DATA_PROP));
@@ -340,12 +355,47 @@
 
 	    var handleHover = function handleHover(event) {
 	        var e = event.toElement || event.relatedTarget;
+	        var current = findCurrentElement(elements);
+	        var previousElements = elements.filter(function (i) {
+	            return parseInt(i.getAttribute(DATA_PROP)) < parseInt(current.getAttribute(DATA_PROP));
+	        });
+
+	        function clearSpread() {
+	            elements.forEach(function (e) {
+	                var i = e.firstChild;
+	                if (i.className.indexOf(HOVER_CLASS) > -1) {
+	                    i.className = i.className.replace(HOVER_CLASS, '');
+	                }
+	            });
+
+	            iterator.each('start', flyup);
+	            miniIterator.each('start', carousel);
+	            current.onmouseover = null;
+	        }
+
 	        iterator.each('start', sideSpread);
 
-	        var current = findCurrentElement(elements);
-	        current.onmouseover = function (event) {
-	            iterator.each('start', flyup);
-	            current.onmouseover = null;
+	        previousElements.forEach(function (e) {
+	            var i = e.firstChild;
+	            if (i.className.indexOf(HOVER_CLASS) < 0) {
+	                i.className = i.className + HOVER_CLASS;
+	            }
+
+	            i.onclick = function (ev) {
+	                var zIndexing = { 0: 3, 1: 2, '-1': 1 };
+	                var p = ev.target.parentNode;
+	                p.setAttribute(DATA_PROP, 0);
+	                var index = elements.indexOf(p);
+
+	                orderFrom(minis, index, zIndexing);
+	                orderFrom(elements, index, zIndexing);
+
+	                clearSpread();
+	            };
+	        });
+
+	        current.onmouseover = function () {
+	            return clearSpread();
 	        };
 	    };
 
@@ -369,7 +419,8 @@
 	        var e = event.toElement || event.relatedTarget;
 	        miniIterator.each('start', carousel.extend({ duration: 150 }));
 
-	        if (e.className.indexOf('mini') > -1) {
+	        var p = e.parentNode;
+	        if (e.className.indexOf('mini') > -1 || (e = p) && e.className.indexOf('mini') > -1) {
 	            findActor(miniActors, e).start(hoverSmall);
 	        }
 	    };
@@ -377,8 +428,9 @@
 	    navContainer.onclick = function (event) {
 	        clearTimeout(outTimer);
 	        var e = event.target;
+	        var p = e.parentNode;
 	        var zIndexing = { 0: 3, 1: 2, '-1': 1 };
-	        if (e.className.indexOf('mini') > -1) {
+	        if (e.className.indexOf('mini') > -1 || (e = p) && e.className.indexOf('mini') > -1) {
 	            e.setAttribute(DATA_PROP, 0);
 	            var index = minis.indexOf(e);
 	            orderFrom(minis, index, zIndexing);
@@ -792,7 +844,7 @@
 
 
 	// module
-	exports.push([module.id, "    * { box-sizing: border-box; font-family: sans-serif; }\n\n    body, html {\n      background: #FFF;\n      height: 100vh;\n      padding: 0;\n      margin: 0;\n      overflow: hidden;\n      display: initial;\n    }\n\n    label {\n      z-index: 12;\n    }\n\n    .mini {\n      display: inline-block;\n      position: absolute;\n      height: 80px;\n      width: 100px;\n      background-color: #FFF;\n      cursor: pointer;\n    }\n\n    .mini[data-depth=\"0\"], .mini[data-depth=\"1\"] {\n      cursor: default;\n    }\n\n    .mini::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 15px;\n        content: ' ';\n    }\n\n    .mini.source::before {\n        background: #0F75FF;\n    }\n\n    #nav-view {\n      overflow-y: hidden;\n      overflow-x: auto;\n      position: relative;\n      white-space: nowrap;\n      padding-top: 7px;\n      padding-left: calc(50% - 100px);\n      height: 100%;\n    }\n\n    #nav-container {\n      height: 0px;\n      transition: .5s ease-out;\n      width: calc(100% - 100px);\n      margin-left: 50px;\n      background-color: #CCC;\n      overflow: hidden;\n    }\n\n    #nav-container.nav-is-open {\n      height: 100px;\n      border: 1px solid #CCC;\n      transition: .5s;\n    }\n\n    button {\n      border-radius: 50%;\n      font-size: 15px;\n      padding: 10px;\n      font-weight: 700;\n      line-height: .5;\n      border: 1px solid;\n      cursor: pointer;\n      background-color: deepskyblue;\n      color: white;\n    }\n\n    button:focus {\n      outline: 0;\n    }\n\n    #cards {\n        position: relative;\n        width: calc(100% - 100px);\n        left: 50px;\n        height: 100%;\n    }\n\n    button:active {\n        opacity: .6;\n    }\n\n    .sidebar {\n      width: 50px;\n      position: fixed;\n      display: inline-block;\n      text-align: center;\n      padding: 66px 0;\n      top: -20px;\n      height: 1000px;\n      z-index: 10;\n    }\n\n    .sidebar.downstream {\n      right: 0;\n      box-shadow: -20px 0 25px white inset;\n    }\n\n    .sidebar.upstream {\n      left: 0;\n      box-shadow: 20px 0 25px white inset;\n    }\n\n    .container {\n      padding-top: 40px;\n      width: 100%;\n      overflow-x: hidden;\n    }\n\n    .card {\n      display: inline-block;\n      position: absolute;\n      opacity: 0;\n      box-shadow: 0 5px 5px rgba(0,0,0,.15);\n      background: repeating-linear-gradient(\n        180deg,\n        #eee,\n        #eee 25px,\n        #fff 25px,\n        #fff 50px\n      );\n      width: 50%;\n      height: 800px;\n    }\n\n    .card::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 33px;\n        content: ' ';\n    }\n\n    .card.source::before {\n        background: #0F75FF;\n        color: #0F75FF;\n    }", ""]);
+	exports.push([module.id, "    * { box-sizing: border-box; font-family: sans-serif; }\n\n    body, html {\n      background: #FFF;\n      height: 100vh;\n      padding: 0;\n      margin: 0;\n      overflow: hidden;\n      display: initial;\n    }\n\n    label {\n      z-index: 12;\n    }\n\n    .inner-card {\n      position: relative;\n      height: 100%;\n      width: 100%;\n    }\n\n    .inner-card[data-hint].hint {\n      cursor: pointer;\n    }\n\n    .inner-card[data-hint]:hover:before,\n    .inner-card[data-hint]:hover:after\n    .inner-card[data-hint]:before,\n    .inner-card[data-hint]:after {\n      opacity: 0;\n    }\n    \n    .inner-card[data-hint].hint:hover:before,\n    .inner-card[data-hint].hint:hover:after\n    .inner-card[data-hint].hint:before,\n    .inner-card[data-hint].hint:after {\n      z-index: 20;\n      opacity: 1;\n    }\n    \n    .inner-card[data-hint].hint:before,\n    .inner-card[data-hint].hint:after {\n      left: 10%;\n    }\n    \n    .mini {\n      display: inline-block;\n      position: absolute;\n      height: 80px;\n      width: 100px;\n      background-color: #FFF;\n      cursor: pointer;\n    }\n\n    .mini[data-depth=\"0\"], .mini[data-depth=\"1\"] {\n      cursor: default;\n    }\n\n    .mini::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 15px;\n        content: ' ';\n    }\n\n    .mini.source::before {\n        background: #0F75FF;\n    }\n\n    #nav-view {\n      overflow-y: hidden;\n      overflow-x: auto;\n      position: relative;\n      white-space: nowrap;\n      padding-top: 7px;\n      padding-left: calc(50% - 100px);\n      height: 100%;\n    }\n\n    #nav-container {\n      height: 0px;\n      transition: .5s ease-out;\n      width: calc(100% - 100px);\n      margin-left: 50px;\n      background-color: #CCC;\n      overflow: hidden;\n    }\n\n    #nav-container.nav-is-open {\n      height: 100px;\n      border: 1px solid #CCC;\n      transition: .5s;\n    }\n\n    button {\n      border-radius: 50%;\n      font-size: 15px;\n      padding: 10px;\n      font-weight: 700;\n      line-height: .5;\n      border: 1px solid;\n      cursor: pointer;\n      background-color: deepskyblue;\n      color: white;\n    }\n\n    button:focus {\n      outline: 0;\n    }\n\n    #cards {\n        position: relative;\n        width: calc(100% - 100px);\n        left: 50px;\n        height: 100%;\n    }\n\n    button:active {\n        opacity: .6;\n    }\n\n    .sidebar {\n      width: 50px;\n      position: fixed;\n      display: inline-block;\n      text-align: center;\n      padding: 66px 0;\n      top: -20px;\n      height: 1000px;\n      z-index: 10;\n    }\n\n    .sidebar.downstream {\n      right: 0;\n      box-shadow: -20px 0 25px white inset;\n    }\n\n    .sidebar.upstream {\n      left: 0;\n      box-shadow: 20px 0 25px white inset;\n    }\n\n    .container {\n      padding-top: 40px;\n      width: 100%;\n      overflow-x: hidden;\n    }\n\n    .card {\n      display: inline-block;\n      position: absolute;\n      opacity: 0;\n      box-shadow: 0 5px 5px rgba(0,0,0,.15);\n      background: repeating-linear-gradient(\n        180deg,\n        #eee,\n        #eee 25px,\n        #fff 25px,\n        #fff 50px\n      );\n      width: 50%;\n      height: 800px;\n    }\n\n    .card::before {\n        width: 100%;\n        position: absolute;\n        left: 0;\n        right: 0;\n        background: #999;\n        color: #999;\n        height: 33px;\n        content: ' ';\n    }\n\n    .card.source::before {\n        background: #0F75FF;\n        color: #0F75FF;\n    }", ""]);
 
 	// exports
 

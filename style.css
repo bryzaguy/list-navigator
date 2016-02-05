@@ -13,6 +13,36 @@
       z-index: 12;
     }
 
+    .inner-card {
+      position: relative;
+      height: 100%;
+      width: 100%;
+    }
+
+    .inner-card[data-hint].hint {
+      cursor: pointer;
+    }
+
+    .inner-card[data-hint]:hover:before,
+    .inner-card[data-hint]:hover:after
+    .inner-card[data-hint]:before,
+    .inner-card[data-hint]:after {
+      opacity: 0;
+    }
+    
+    .inner-card[data-hint].hint:hover:before,
+    .inner-card[data-hint].hint:hover:after
+    .inner-card[data-hint].hint:before,
+    .inner-card[data-hint].hint:after {
+      z-index: 20;
+      opacity: 1;
+    }
+    
+    .inner-card[data-hint].hint:before,
+    .inner-card[data-hint].hint:after {
+      left: 10%;
+    }
+    
     .mini {
       display: inline-block;
       position: absolute;
