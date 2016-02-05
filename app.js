@@ -58,7 +58,6 @@
 	var hash = window.location.hash;
 	var useTopNav = hash.toLowerCase() === '#topnav';
 	var useSideNav = hash.toLowerCase() === '#sidenav';
-	console.log(hash);
 
 	///////       WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
 
@@ -244,11 +243,14 @@
 	};
 
 	function orderUnlocked(items, zIndexing) {
-	    var left = items.reduce(function (p, n, i) {
-	        return n.getAttribute(DATA_PROP) == 0 ? i : p;
-	    }, 0);
+	    var current = findCurrentElement(items);
+	    orderFrom(items, items.indexOf(current), zIndexing);
+	}
 
-	    orderFrom(items, left, zIndexing);
+	function findCurrentElement(items) {
+	    return items.reduce(function (p, n) {
+	        return n.getAttribute(DATA_PROP) == 0 ? n : p;
+	    }, undefined);
 	}
 
 	function orderFrom(items, index, zIndexing) {
@@ -293,6 +295,12 @@
 	    miniIterator.each('start', carousel);
 	}
 
+	function findActor(actorItems, element) {
+	    return actorItems.filter(function (a) {
+	        return a.element === element;
+	    })[0];
+	}
+
 	downstream.onclick = function (e) {
 	    clearTimeout(outTimer);
 	    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
@@ -305,6 +313,40 @@
 
 	    move(e, zIndexing, -1);
 	};
+
+	if (useSideNav) {
+
+	    var sideSpread = new ui.Tween({
+	        values: {
+	            x: function (t) {
+	                var depth = parseInt(t.element.getAttribute(DATA_PROP));
+	                return depth < 0 ? (depth + 1) * 25 + 75 + '%' : (depth + 1) * 100 + '%';
+	            },
+	            y: function (t) {
+	                var d = t.element.getAttribute(DATA_PROP);
+	                return d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) : 48;
+	            },
+	            opacity: function (t) {
+	                var depth = parseInt(t.element.getAttribute(DATA_PROP));
+	                return depth < 2 ? 1 : .5;
+	            }
+	        }
+	    });
+
+	    var handleHover = function handleHover(event) {
+	        var e = event.toElement || event.relatedTarget;
+	        iterator.each('start', sideSpread);
+
+	        var current = findCurrentElement(elements);
+	        current.onmouseover = function (event) {
+	            iterator.each('start', flyup);
+	            current.onmouseover = null;
+	        };
+	    };
+
+	    var leftSide = upstream.parentNode;
+	    leftSide.onmouseover = handleHover;
+	}
 
 	if (useTopNav) {
 
@@ -323,10 +365,7 @@
 	        miniIterator.each('start', carousel.extend({ duration: 150 }));
 
 	        if (e.className.indexOf('mini') > -1) {
-	            var actor = miniActors.filter(function (a) {
-	                return a.element === e;
-	            })[0];
-	            actor.start(hoverSmall);
+	            findActor(miniActors, e).start(hoverSmall);
 	        }
 	    };
 
