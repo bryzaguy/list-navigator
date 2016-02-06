@@ -23,6 +23,8 @@
     "babel-preset-stage-2": "^6.0.15",
     "css-loader": "^0.23.1",
     "es6-promise": "^3.0.2",
+    "file-loader": "^0.8.5",
+    "font-awesome": "^4.5.0",
     "hint.css": "^2.0.0",
     "popmotion": "^4.3.4",
     "style-loader": "^0.13.0",

@@ -98,18 +98,25 @@
 
     button {
       border-radius: 50%;
-      font-size: 15px;
-      padding: 10px;
       font-weight: 700;
-      line-height: .5;
-      border: 1px solid;
+      width: 28px;
+      height: 28px;
+      border: none;
       cursor: pointer;
       background-color: deepskyblue;
       color: white;
     }
 
+    label button {
+
+    }
+
     button:focus {
       outline: 0;
+    }
+
+    button:hover {
+      background: rgb(0,72,97);
     }
 
     #cards {

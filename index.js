@@ -1,5 +1,6 @@
 var outTimer;
 var hintcss = require('hint.css/hint.min.css');
+var fontawesome = require('font-awesome/css/font-awesome.min.css');
 var style = require('./style.css');
 var ui = require('popmotion');
 var DATA_PROP = 'data-depth';
