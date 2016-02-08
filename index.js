@@ -329,6 +329,23 @@ if (useSideNav) {
             opacity: (t) => {
                 var depth = parseInt(t.element.getAttribute(DATA_PROP));
                 return depth < 2 ? 1 : .5;
+            },
+            boxShadow: (e) => {
+                var depth = parseInt(e.element.getAttribute(DATA_PROP));
+                switch (depth) {
+                    case 1:
+                        return '10px 5px 10px rgba(0,0,0,0.25)';
+                    case 0:
+                        return '-10px 5px 10px rgba(0,0,0,0.25)';
+                    default: {
+                        if (depth < 0 && depth > -5) {
+                            var size = 10 + (depth * 2);
+                            return `-${size}px 5px ${size}px rgba(0,0,0,0.25)`
+                        } else {
+                            return '0 5px 5px rgba(0,0,0,.15)';
+                        }
+                    }
+                }
             }
         }
     });
