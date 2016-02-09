@@ -68,7 +68,14 @@
 	    location.reload();
 	};
 
+	// CAROUSEL/PAGING
+	// TODO: CHANGE Z-INDEX TO PERSPECTIVE AND TRANSLATEZ.
+
+	// TOPNAV
 	// TODO: WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
+
+	// SIDENAV
+	// TODO: FIX ISSUE WITH REMOVING ALL HANDLERS/HINT CLASS
 
 	var hoverDiv = function (e, i) {
 	    var eInner = document.createElement('div');
@@ -342,7 +349,6 @@
 	};
 
 	if (useSideNav) {
-
 	    var sideSpread = new ui.Tween({
 	        values: {
 	            x: function (t) {
@@ -381,7 +387,6 @@
 	    });
 
 	    var handleHover = function handleHover(event) {
-	        var e = event.toElement || event.relatedTarget;
 	        var current = findCurrentElement(elements);
 	        var previousElements = elements.filter(function (i) {
 	            return parseInt(i.getAttribute(DEPTH_PROP)) < parseInt(current.getAttribute(DEPTH_PROP));
@@ -420,6 +425,25 @@
 	                clearSpread();
 	            };
 	        });
+
+	        var d = downstream.onclick,
+	            u = upstream.onclick,
+	            n = navContainer.onclick;
+
+	        downstream.onclick = function (e) {
+	            clearSpread();
+	            d(e);
+	        };
+
+	        upstream.onclick = function (e) {
+	            clearSpread();
+	            u(e);
+	        };
+
+	        navContainer.onclick = function (e) {
+	            clearSpread();
+	            n(e);
+	        };
 
 	        current.onmouseover = function () {
 	            return clearSpread();

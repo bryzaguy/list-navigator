@@ -322,7 +322,6 @@ upstream.onclick = (e) => {
 };
 
 if (useSideNav) {
-
     var sideSpread = new ui.Tween({
         values: {
             x: (t) => {
@@ -362,7 +361,6 @@ if (useSideNav) {
     });
 
     var handleHover = function handleHover (event) {
-        var e = event.toElement || event.relatedTarget;
         var current = findCurrentElement(elements);
         var previousElements = elements.filter((i) => 
             parseInt(i.getAttribute(DEPTH_PROP)) < parseInt(current.getAttribute(DEPTH_PROP))
@@ -402,12 +400,30 @@ if (useSideNav) {
             };
         });
 
+        var d = downstream.onclick, 
+            u = upstream.onclick,
+            n = navContainer.onclick;
+
+        downstream.onclick = (e) => {
+            clearSpread();
+            d(e);
+        };
+
+        upstream.onclick = (e) => {
+            clearSpread();
+            u(e);
+        };
+
+        navContainer.onclick = (e) => {
+            clearSpread();
+            n(e);
+        }
+
         current.onmouseover = () => clearSpread();
     };
 
     var leftSide = upstream.parentNode;
     leftSide.onmouseover = handleHover;
-
 }
 
 function initTopNav() {
