@@ -112,9 +112,21 @@
       color: white;
     }
 
-    label button {
-
+    #lock {
+      position: absolute;
+      left: 25%;
+      top: 4px;
+      z-index: 22;
+      /*
+      background-color: #0057cc;
+      top: 2px;
+      left: calc(50% - 40px);*/
     }
+/*
+    #lock:active {
+      opacity: 1;
+      background-color: #002b66;
+    }*/
 
     button:focus {
       outline: 0;
