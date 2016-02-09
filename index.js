@@ -94,7 +94,7 @@ var largeCards = {
         },
         y: function(t) {
             var d = t.element.getAttribute(DEPTH_PROP);
-            return d == 0 || d == 1 ? 0 : 48;
+            return d === null ? 100 : d == 0 || d == 1 ? 0 : 48;
         },
         boxShadow: (e) => {
             var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
@@ -118,7 +118,7 @@ var smallCards = {
             }),
             to: (e) => {
                 var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
-                return depth == 1 ? '1px solid white' : '0px solid white';
+                return depth == 1 ? '2px solid white' : '0px solid white';
             }
         },
         boxShadow: (e) => {
@@ -132,13 +132,16 @@ var smallCards = {
                     return '0 2px 2px rgba(0,0,0,.15)';
             }
         },
+        y: (t) => {
+            return t.element.getAttribute(DEPTH_PROP) === null ? 50 : 0;
+        },
         transformOrigin: function(t) {
             var d = t.element.getAttribute(DEPTH_PROP);
             return d > 0 ? '0% 100%' : '100% 100%';
         },
         scale: function(t) {
             var d = t.element.getAttribute(DEPTH_PROP);
-            return d == 0 || d == 1 ? 1 : .95;
+            return !d || d == 0 || d == 1 ? 1 : .95;
         }
     }
 };
@@ -159,9 +162,8 @@ var defaults = {
     values: {
         opacity: (e) => {
             var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
-            return depth == 0 || depth == 1 ? 1 : 0.5;
+            return Number.isNaN(depth) ? 0 : depth == 0 || depth == 1 ? 1 : 0.5;
         },
-        y: 0,
         x: (e) => {
             var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
             return (depth * 100) + '%';
@@ -318,17 +320,17 @@ if (useSideNav) {
         values: {
             x: (t) => {
                 var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
-                return depth < 0 ? 
+                return Number.isNaN(depth) ? 0 : depth < 0 ? 
                     (((depth + 1) * 25) + 75) + '%' :
                     ((depth + 1) * 100) + '%';
             },
             y: function(t) {
                 var d = t.element.getAttribute(DEPTH_PROP);
-                return d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) + 20 : 48;
+                return d === null ? 100 : d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) + 20 : 48;
             },
             opacity: (t) => {
                 var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
-                return depth < 2 ? 1 : .5;
+                return Number.isNaN(depth) ? 0 : depth < 2 ? 1 : .5;
             },
             boxShadow: (e) => {
                 var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
@@ -337,6 +339,8 @@ if (useSideNav) {
                         return '10px 5px 10px rgba(0,0,0,0.25)';
                     case 0:
                         return '-10px 5px 10px rgba(0,0,0,0.25)';
+                    case NaN:
+                        return '0px 0px 10px rgba(0,0,0,0.25)';
                     default: {
                         if (depth < 0 && depth > -5) {
                             var size = 10 + (depth * 2);
