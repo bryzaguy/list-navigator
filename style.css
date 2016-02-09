@@ -40,7 +40,7 @@
     
     .inner-card[data-hint].hint:before,
     .inner-card[data-hint].hint:after {
-      left: 10%;
+      left: 10px;
     }
     
     .mini {
