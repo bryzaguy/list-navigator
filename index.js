@@ -20,7 +20,14 @@ window.onhashchange = () => {
     location.reload(); 
 };
 
+// CAROUSEL/PAGING
+// TODO: CHANGE Z-INDEX TO PERSPECTIVE AND TRANSLATEZ.
+
+// TOPNAV
 // TODO: WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
+
+// SIDENAV
+// TODO: FIX ISSUE WITH REMOVING ALL HANDLERS/HINT CLASS
 
 var hoverDiv = (e, i) => {
         var eInner = document.createElement('div');
