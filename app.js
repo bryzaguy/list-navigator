@@ -106,7 +106,7 @@
 
 	    return e;
 	},
-	    relations = [{ depth: -4, types: 'Requirements' }, { depth: -3, types: 'Requirements, Epics' }, { depth: -2, types: 'Epics' }, { depth: -1, types: 'Epics, Stories' }, { depth: 0, types: 'Epics, Stories' }, { depth: 1, types: 'Stories' }, { depth: 2, types: 'Stories' }, { depth: 3, types: 'Stories, Testcases' }, { depth: 4, types: 'Testcases' }, { depth: 5, types: 'Defects, Testcases' }, { depth: 6, types: 'Defects' }];
+	    relations = [{ depth: -4, types: 'Requirements' }, { depth: -3, types: 'Requirements, Epics' }, { depth: -2, types: 'Epics' }, { depth: -1, types: 'Stories' }, { depth: 0, types: 'Stories' }, { depth: 1, types: 'Stories' }, { depth: 2, types: 'Stories' }, { depth: 3, types: 'Stories, Testcases' }, { depth: 4, types: 'Testcases' }, { depth: 5, types: 'Defects, Testcases' }, { depth: 6, types: 'Defects' }];
 
 	var minis = [],
 	    elements = relations.map(div),
@@ -372,11 +372,11 @@
 	            values: {
 	                x: function (t) {
 	                    var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
-	                    return Number.isNaN(depth) ? 0 : depth < 0 ? (depth + 1) * 25 + 75 + '%' : (depth + 1) * 100 + '%';
+	                    return Number.isNaN(depth) ? 0 : depth < 0 ? (depth + 1) * 12.5 + 37.5 + '%' : (depth + 1) * 100 - 50 + '%';
 	                },
 	                y: function (t) {
 	                    var d = t.element.getAttribute(DEPTH_PROP);
-	                    return d === null ? 100 : d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) + 20 : 48;
+	                    return d === null ? 100 : d == 0 || d == 1 ? 0 : 48;
 	                },
 	                opacity: function (t) {
 	                    var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
