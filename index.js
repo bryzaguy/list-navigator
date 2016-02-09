@@ -70,8 +70,8 @@ var minis = [],
 
 elements.forEach(fragment.appendChild, fragment);
 
-document.getElementById('cards')
-        .appendChild(fragment);
+var cardsContainer = document.getElementById('cards');
+cardsContainer.appendChild(fragment);
     
 if (useTopNav) {
     minis = relations.map(mini);
@@ -165,7 +165,7 @@ var defaults = {
     values: {
         opacity: (e) => {
             var depth = parseInt(e.element.getAttribute(DATA_PROP));
-            return depth == 0 || depth == 1 ? 1 : .5;
+            return depth == 0 || depth == 1 ? 1 : 0.5;
         },
         y: 0
     }
@@ -217,11 +217,12 @@ iterator.stagger('start', STAGGER_DURATION, flyup);
 if (useTopNav) {
     miniIterator.stagger('start', STAGGER_DURATION, carousel);
 
+    navContainer.className = 'nav-is-open';
+
     outTimer = setTimeout(() => {
         navContainer.className = '';
+        initTopNav();
     }, STAGGER_DURATION * minis.length + 200);
-
-    navContainer.className = 'nav-is-open';
 }
 
 
@@ -298,13 +299,11 @@ function findActor(actorItems, element) {
 }
 
 downstream.onclick = (e) => {
-    clearTimeout(outTimer);
     var zIndexing = { 0: 3, 1: 2, '-1': 1 };
     move(e, zIndexing, 1);
 };
 
 upstream.onclick = (e) => {
-    clearTimeout(outTimer);
     var zIndexing = lockInput.checked ?
         { 0: 3, 1: 2, 2: 1 } :
         { 1: 3, 0: 2, 2: 1 };
@@ -382,17 +381,21 @@ if (useSideNav) {
 
 }
 
-if (useTopNav) {
+function initTopNav() {
 
-    downstream.onmouseover = (e) => {
-        clearTimeout(outTimer);
+    var openNav = () => {
         navContainer.className = 'nav-is-open';
+
+        setTimeout(() => {
+            cardsContainer.onmouseover = (event) => {
+                navContainer.className = '';
+                cardsContainer.onmouseover = null;
+            };
+        }, 200);
     };
 
-    upstream.onmouseover = (e) => {
-        clearTimeout(outTimer);
-        navContainer.className = 'nav-is-open';
-    };
+    downstream.onmouseover = openNav;
+    upstream.onmouseover = openNav;
 
     navContainer.onmouseover = (event) => {
         var e = event.toElement || event.relatedTarget;
@@ -405,7 +408,6 @@ if (useTopNav) {
     };
 
     navContainer.onclick = (event) => {
-        clearTimeout(outTimer);
         var e = event.target;
         var p = e.parentNode;
         var zIndexing = { 0: 3, 1: 2, '-1': 1 };
@@ -419,23 +421,5 @@ if (useTopNav) {
             miniIterator.each('start', carousel);
         }
     };
-
-    navContainer.onmouseout = (event) => {
-        clearTimeout(outTimer); 
-        var e = event.toElement || event.relatedTarget;
-
-        while(e && e.parentNode && e.parentNode != window) {
-            e = e.parentNode;
-            if (e == navContainer) {
-                if(e.preventDefault) e.preventDefault();
-                return;
-            }
-        }
-
-        outTimer = setTimeout(() => {
-            navContainer.className = '';
-        }, 200);
-    };
-
 }
 

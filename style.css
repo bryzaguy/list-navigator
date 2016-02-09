@@ -48,6 +48,7 @@
       position: absolute;
       height: 80px;
       width: 100px;
+      opacity: .5;
       background-color: #FFF;
       cursor: pointer;
     }
@@ -160,7 +161,7 @@
     .card {
       display: inline-block;
       position: absolute;
-      opacity: 0;
+      opacity: 0.5;
       box-shadow: 0 5px 5px rgba(0,0,0,.15);
       background: repeating-linear-gradient(
         180deg,
