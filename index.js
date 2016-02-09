@@ -1,4 +1,4 @@
-var outTimer;
+var locked = false;
 var hintcss = require('hint.css/hint.min.css');
 var fontawesome = require('font-awesome/css/font-awesome.min.css');
 var style = require('./style.css');
@@ -219,16 +219,20 @@ if (useTopNav) {
 
     navContainer.className = 'nav-is-open';
 
-    outTimer = setTimeout(() => {
+    setTimeout(() => {
         navContainer.className = '';
         initTopNav();
     }, STAGGER_DURATION * minis.length + 200);
 }
 
 
-lockInput.onchange = () => {
+lockInput.onclick = () => {
+    locked = !locked;
+
+    lockInput.firstChild.className = locked ? 'fa fa-lock' : 'fa fa-unlock-alt';
+
     var zIndexing = { 0: 3, 1: 2, '-1': 1 };
-    if (!lockInput.checked) {
+    if (!locked) {
         if (useTopNav) {
             navContainer.className = 'nav-is-open';
         }
@@ -265,7 +269,7 @@ function updateElement (element, depth, zIndex) {
 
 function getDepth (currentDepth, direction) {
     var jump = Math.abs(direction + direction) * -direction;
-    if (lockInput.checked && (currentDepth == 0 || currentDepth == direction)) {
+    if (locked && (currentDepth == 0 || currentDepth == direction)) {
         return currentDepth == direction ? currentDepth + jump : 0;
     } else {
         return currentDepth - direction;
@@ -304,7 +308,7 @@ downstream.onclick = (e) => {
 };
 
 upstream.onclick = (e) => {
-    var zIndexing = lockInput.checked ?
+    var zIndexing = locked ?
         { 0: 3, 1: 2, 2: 1 } :
         { 1: 3, 0: 2, 2: 1 };
 
