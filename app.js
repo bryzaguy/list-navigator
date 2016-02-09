@@ -51,7 +51,8 @@
 	var fontawesome = __webpack_require__(5);
 	var style = __webpack_require__(13);
 	var ui = __webpack_require__(15);
-	var DATA_PROP = 'data-depth';
+	var DEPTH_PROP = 'data-depth';
+	var LOCKED_PROP = 'data-locked';
 	var HOVER_PROP = 'data-hint';
 	var HOVER_CLASS = ' hint hint--top-right';
 	var FLYUP_DURATION = 500;
@@ -67,7 +68,7 @@
 	    location.reload();
 	};
 
-	///////       WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
+	// TODO: WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
 
 	var hoverDiv = function (e, i) {
 	    var eInner = document.createElement('div');
@@ -79,7 +80,8 @@
 	    var e = document.createElement('div');
 	    var eInner = document.createElement('div');
 	    e.className = i.depth === 0 ? 'card source' : 'card';
-	    e.setAttribute(DATA_PROP, i.depth);
+	    e.setAttribute(DEPTH_PROP, i.depth);
+	    e.setAttribute(LOCKED_PROP, locked);
 
 	    hoverDiv(e, i);
 
@@ -88,7 +90,8 @@
 	    mini = function (i) {
 	    var e = document.createElement('div');
 	    e.className = i.depth === 0 ? 'mini source' : 'mini';
-	    e.setAttribute(DATA_PROP, i.depth);
+	    e.setAttribute(DEPTH_PROP, i.depth);
+	    e.setAttribute(LOCKED_PROP, locked);
 
 	    hoverDiv(e, i);
 
@@ -113,27 +116,18 @@
 	    document.getElementById('nav-view').appendChild(minisFragment);
 	}
 
-	var absoluteCards = {
-	    values: {
-	        x: function (e) {
-	            var depth = parseInt(e.element.getAttribute(DATA_PROP));
-	            return depth * 100 + '%';
-	        }
-	    }
-	};
-
 	var largeCards = {
 	    values: {
 	        borderRight: function (e) {
-	            var depth = parseInt(e.element.getAttribute(DATA_PROP));
+	            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
 	            return depth == 0 ? '2px solid white' : '0px solid white';
 	        },
 	        y: function (t) {
-	            var d = t.element.getAttribute(DATA_PROP);
+	            var d = t.element.getAttribute(DEPTH_PROP);
 	            return d == 0 || d == 1 ? 0 : 48;
 	        },
 	        boxShadow: function (e) {
-	            var depth = parseInt(e.element.getAttribute(DATA_PROP));
+	            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
 	            switch (depth) {
 	                case 1:
 	                    return '10px 5px 10px rgba(0,0,0,0.25)';
@@ -153,12 +147,12 @@
 	                return Math.round(progress);
 	            }),
 	            to: function (e) {
-	                var depth = parseInt(e.element.getAttribute(DATA_PROP));
+	                var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
 	                return depth == 1 ? '1px solid white' : '0px solid white';
 	            }
 	        },
 	        boxShadow: function (e) {
-	            var depth = parseInt(e.element.getAttribute(DATA_PROP));
+	            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
 	            switch (depth) {
 	                case 1:
 	                    return '3px 5px 7px rgba(0,0,0,0.25)';
@@ -169,11 +163,11 @@
 	            }
 	        },
 	        transformOrigin: function (t) {
-	            var d = t.element.getAttribute(DATA_PROP);
+	            var d = t.element.getAttribute(DEPTH_PROP);
 	            return d > 0 ? '0% 100%' : '100% 100%';
 	        },
 	        scale: function (t) {
-	            var d = t.element.getAttribute(DATA_PROP);
+	            var d = t.element.getAttribute(DEPTH_PROP);
 	            return d == 0 || d == 1 ? 1 : .95;
 	        }
 	    }
@@ -194,26 +188,30 @@
 	var defaults = {
 	    values: {
 	        opacity: function (e) {
-	            var depth = parseInt(e.element.getAttribute(DATA_PROP));
+	            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
 	            return depth == 0 || depth == 1 ? 1 : 0.5;
 	        },
-	        y: 0
+	        y: 0,
+	        x: function (e) {
+	            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
+	            return depth * 100 + '%';
+	        }
 	    }
 	};
 
-	var flyup = base.extend(defaults).extend(absoluteCards).extend(largeCards);
+	var flyup = base.extend(defaults).extend(largeCards);
 
-	var carousel = base.extend(defaults).extend(absoluteCards).extend(smallCards);
+	var carousel = base.extend(defaults).extend(smallCards);
 
 	var toActors = function (y, e) {
-	    var depth = parseInt(e.getAttribute(DATA_PROP));
+	    var depth = parseInt(e.getAttribute(DEPTH_PROP));
 	    var values = {
 	        x: depth * 100 + '%',
 	        y: y,
 	        opacity: 0,
 	        zIndex: depth == 0 || depth == 1 ? 1 : 0,
 	        transformOrigin: function (t) {
-	            var d = t.element.getAttribute(DATA_PROP);
+	            var d = t.element.getAttribute(DEPTH_PROP);
 	            return d > 0 ? '0% 0%' : '100% 0%';
 	        },
 	        scale: 1,
@@ -251,9 +249,11 @@
 	}
 
 	lockInput.onclick = function () {
+	    var current = findCurrentElement(elements);
 	    locked = !locked;
 
 	    lockInput.firstChild.className = locked ? 'fa fa-lock' : 'fa fa-unlock-alt';
+	    current.setAttribute(LOCKED_PROP, locked);
 
 	    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
 	    if (!locked) {
@@ -276,7 +276,7 @@
 
 	function findCurrentElement(items) {
 	    return items.reduce(function (p, n) {
-	        return n.getAttribute(DATA_PROP) == 0 ? n : p;
+	        return n.getAttribute(LOCKED_PROP) == "true" || !locked && n.getAttribute(DEPTH_PROP) == 0 ? n : p;
 	    }, undefined);
 	}
 
@@ -287,7 +287,7 @@
 	}
 
 	function updateElement(element, depth, zIndex) {
-	    element.setAttribute(DATA_PROP, depth);
+	    element.setAttribute(DEPTH_PROP, depth);
 	    ui.css.set(element, 'z-index', zIndex);
 	}
 
@@ -302,7 +302,7 @@
 
 	function transformElements(zIndexing, direction) {
 	    return function (i) {
-	        var depth = getDepth(parseInt(i.getAttribute(DATA_PROP)), direction);
+	        var depth = getDepth(parseInt(i.getAttribute(DEPTH_PROP)), direction);
 
 	        updateElement(i, depth, zIndexing[depth] || 0);
 	    };
@@ -344,19 +344,19 @@
 	    var sideSpread = new ui.Tween({
 	        values: {
 	            x: function (t) {
-	                var depth = parseInt(t.element.getAttribute(DATA_PROP));
+	                var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
 	                return depth < 0 ? (depth + 1) * 25 + 75 + '%' : (depth + 1) * 100 + '%';
 	            },
 	            y: function (t) {
-	                var d = t.element.getAttribute(DATA_PROP);
+	                var d = t.element.getAttribute(DEPTH_PROP);
 	                return d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) + 20 : 48;
 	            },
 	            opacity: function (t) {
-	                var depth = parseInt(t.element.getAttribute(DATA_PROP));
+	                var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
 	                return depth < 2 ? 1 : .5;
 	            },
 	            boxShadow: function (e) {
-	                var depth = parseInt(e.element.getAttribute(DATA_PROP));
+	                var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
 	                switch (depth) {
 	                    case 1:
 	                        return '10px 5px 10px rgba(0,0,0,0.25)';
@@ -380,7 +380,7 @@
 	        var e = event.toElement || event.relatedTarget;
 	        var current = findCurrentElement(elements);
 	        var previousElements = elements.filter(function (i) {
-	            return parseInt(i.getAttribute(DATA_PROP)) < parseInt(current.getAttribute(DATA_PROP));
+	            return parseInt(i.getAttribute(DEPTH_PROP)) < parseInt(current.getAttribute(DEPTH_PROP));
 	        });
 
 	        function clearSpread() {
@@ -407,7 +407,7 @@
 	            i.onclick = function (ev) {
 	                var zIndexing = { 0: 3, 1: 2, '-1': 1 };
 	                var p = ev.target.parentNode;
-	                p.setAttribute(DATA_PROP, 0);
+	                p.setAttribute(DEPTH_PROP, 0);
 	                var index = elements.indexOf(p);
 
 	                orderFrom(minis, index, zIndexing);
@@ -457,7 +457,7 @@
 	        var p = e.parentNode;
 	        var zIndexing = { 0: 3, 1: 2, '-1': 1 };
 	        if (e.className.indexOf('mini') > -1 || (e = p) && e.className.indexOf('mini') > -1) {
-	            e.setAttribute(DATA_PROP, 0);
+	            e.setAttribute(DEPTH_PROP, 0);
 	            var index = minis.indexOf(e);
 	            orderFrom(minis, index, zIndexing);
 	            orderFrom(elements, index, zIndexing);

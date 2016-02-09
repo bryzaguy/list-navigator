@@ -3,7 +3,8 @@ var hintcss = require('hint.css/hint.min.css');
 var fontawesome = require('font-awesome/css/font-awesome.min.css');
 var style = require('./style.css');
 var ui = require('popmotion');
-var DATA_PROP = 'data-depth';
+var DEPTH_PROP = 'data-depth';
+var LOCKED_PROP = 'data-locked';
 var HOVER_PROP = 'data-hint';
 var HOVER_CLASS = ' hint hint--top-right';
 var FLYUP_DURATION = 500;
@@ -19,7 +20,7 @@ window.onhashchange = () => {
     location.reload(); 
 };
 
-///////       WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
+// TODO: WIDTH OF NAV IS ADJUSTED TO KEEP ITEMS IN SCROLL VIEW.
 
 var hoverDiv = (e, i) => {
         var eInner = document.createElement('div');
@@ -33,7 +34,8 @@ var hoverDiv = (e, i) => {
         e.className = i.depth === 0 
             ? 'card source'
             : 'card';
-        e.setAttribute(DATA_PROP, i.depth);
+        e.setAttribute(DEPTH_PROP, i.depth);
+        e.setAttribute(LOCKED_PROP, locked);
 
         hoverDiv(e, i);
 
@@ -44,7 +46,8 @@ var hoverDiv = (e, i) => {
         e.className = i.depth === 0 
             ? 'mini source'
             : 'mini';
-        e.setAttribute(DATA_PROP, i.depth);
+        e.setAttribute(DEPTH_PROP, i.depth);
+        e.setAttribute(LOCKED_PROP, locked);
 
         hoverDiv(e, i);
 
@@ -83,27 +86,18 @@ if (useTopNav) {
 
 }
 
-var absoluteCards = {
-    values: {
-        x: (e) => {
-            var depth = parseInt(e.element.getAttribute(DATA_PROP));
-            return (depth * 100) + '%';
-        }
-    }
-};
-
 var largeCards = {
     values: {
         borderRight: (e) => {
-            var depth = parseInt(e.element.getAttribute(DATA_PROP));
+            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
             return depth == 0 ? '2px solid white' : '0px solid white';
         },
         y: function(t) {
-            var d = t.element.getAttribute(DATA_PROP);
+            var d = t.element.getAttribute(DEPTH_PROP);
             return d == 0 || d == 1 ? 0 : 48;
         },
         boxShadow: (e) => {
-            var depth = parseInt(e.element.getAttribute(DATA_PROP));
+            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
             switch (depth) {
                 case 1:
                     return '10px 5px 10px rgba(0,0,0,0.25)';
@@ -123,12 +117,12 @@ var smallCards = {
                 return Math.round(progress);
             }),
             to: (e) => {
-                var depth = parseInt(e.element.getAttribute(DATA_PROP));
+                var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
                 return depth == 1 ? '1px solid white' : '0px solid white';
             }
         },
         boxShadow: (e) => {
-            var depth = parseInt(e.element.getAttribute(DATA_PROP));
+            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
             switch (depth) {
                 case 1:
                     return '3px 5px 7px rgba(0,0,0,0.25)';
@@ -139,11 +133,11 @@ var smallCards = {
             }
         },
         transformOrigin: function(t) {
-            var d = t.element.getAttribute(DATA_PROP);
+            var d = t.element.getAttribute(DEPTH_PROP);
             return d > 0 ? '0% 100%' : '100% 100%';
         },
         scale: function(t) {
-            var d = t.element.getAttribute(DATA_PROP);
+            var d = t.element.getAttribute(DEPTH_PROP);
             return d == 0 || d == 1 ? 1 : .95;
         }
     }
@@ -164,31 +158,32 @@ var base = new ui.Tween({
 var defaults = {
     values: {
         opacity: (e) => {
-            var depth = parseInt(e.element.getAttribute(DATA_PROP));
+            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
             return depth == 0 || depth == 1 ? 1 : 0.5;
         },
-        y: 0
+        y: 0,
+        x: (e) => {
+            var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
+            return (depth * 100) + '%';
+        }
     }
 };
 
-
 var flyup = base.extend(defaults)
-                .extend(absoluteCards)
                 .extend(largeCards);
 
 var carousel = base .extend(defaults)
-                    .extend(absoluteCards)
                     .extend(smallCards);
 
 var toActors = (y, e) => {
-    var depth = parseInt(e.getAttribute(DATA_PROP));
+    var depth = parseInt(e.getAttribute(DEPTH_PROP));
     var values = {
         x: (depth * 100) + '%',
         y: y,
         opacity: 0,
         zIndex: depth == 0 || depth == 1 ? 1 : 0,
         transformOrigin: function(t) {
-            var d = t.element.getAttribute(DATA_PROP);
+            var d = t.element.getAttribute(DEPTH_PROP);
             return d > 0 ? '0% 0%' : '100% 0%';
         },
         scale: 1,
@@ -227,9 +222,11 @@ if (useTopNav) {
 
 
 lockInput.onclick = () => {
+    var current = findCurrentElement(elements);
     locked = !locked;
 
     lockInput.firstChild.className = locked ? 'fa fa-lock' : 'fa fa-unlock-alt';
+    current.setAttribute(LOCKED_PROP, locked);
 
     var zIndexing = { 0: 3, 1: 2, '-1': 1 };
     if (!locked) {
@@ -246,13 +243,13 @@ lockInput.onclick = () => {
 }
 
 function orderUnlocked (items, zIndexing) {
-    var current = findCurrentElement(items)
+    var current = findCurrentElement(items);
     orderFrom(items, items.indexOf(current), zIndexing);
 }
 
 function findCurrentElement (items) {
     return items.reduce((p, n) => {
-        return n.getAttribute(DATA_PROP) == 0 ? n : p;
+        return n.getAttribute(LOCKED_PROP) == "true" || (!locked && n.getAttribute(DEPTH_PROP) == 0) ? n : p;
     }, undefined);
 }
 
@@ -263,7 +260,7 @@ function orderFrom (items, index, zIndexing) {
 }
 
 function updateElement (element, depth, zIndex) {
-    element.setAttribute(DATA_PROP, depth);
+    element.setAttribute(DEPTH_PROP, depth);
     ui.css.set(element, 'z-index', zIndex);
 }
 
@@ -278,7 +275,7 @@ function getDepth (currentDepth, direction) {
 
 function transformElements (zIndexing, direction) {
     return (i) => {
-        var depth = getDepth(parseInt(i.getAttribute(DATA_PROP)), direction);
+        var depth = getDepth(parseInt(i.getAttribute(DEPTH_PROP)), direction);
 
         updateElement(i, depth, zIndexing[depth] || 0);
     }
@@ -320,21 +317,21 @@ if (useSideNav) {
     var sideSpread = new ui.Tween({
         values: {
             x: (t) => {
-                var depth = parseInt(t.element.getAttribute(DATA_PROP));
+                var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
                 return depth < 0 ? 
                     (((depth + 1) * 25) + 75) + '%' :
                     ((depth + 1) * 100) + '%';
             },
             y: function(t) {
-                var d = t.element.getAttribute(DATA_PROP);
+                var d = t.element.getAttribute(DEPTH_PROP);
                 return d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) + 20 : 48;
             },
             opacity: (t) => {
-                var depth = parseInt(t.element.getAttribute(DATA_PROP));
+                var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
                 return depth < 2 ? 1 : .5;
             },
             boxShadow: (e) => {
-                var depth = parseInt(e.element.getAttribute(DATA_PROP));
+                var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
                 switch (depth) {
                     case 1:
                         return '10px 5px 10px rgba(0,0,0,0.25)';
@@ -357,7 +354,7 @@ if (useSideNav) {
         var e = event.toElement || event.relatedTarget;
         var current = findCurrentElement(elements);
         var previousElements = elements.filter((i) => 
-            parseInt(i.getAttribute(DATA_PROP)) < parseInt(current.getAttribute(DATA_PROP))
+            parseInt(i.getAttribute(DEPTH_PROP)) < parseInt(current.getAttribute(DEPTH_PROP))
         );
 
         function clearSpread() {
@@ -384,7 +381,7 @@ if (useSideNav) {
             i.onclick = (ev) => {
                 var zIndexing = { 0: 3, 1: 2, '-1': 1 };
                 var p = ev.target.parentNode;
-                p.setAttribute(DATA_PROP, 0);
+                p.setAttribute(DEPTH_PROP, 0);
                 var index = elements.indexOf(p);
 
                 orderFrom(minis, index, zIndexing);
@@ -433,7 +430,7 @@ function initTopNav() {
         var p = e.parentNode;
         var zIndexing = { 0: 3, 1: 2, '-1': 1 };
         if (e.className.indexOf('mini') > -1 || ((e = p) && e.className.indexOf('mini') > -1)) {
-            e.setAttribute(DATA_PROP, 0);
+            e.setAttribute(DEPTH_PROP, 0);
             var index = minis.indexOf(e);
             orderFrom(minis, index, zIndexing);
             orderFrom(elements, index, zIndexing);
