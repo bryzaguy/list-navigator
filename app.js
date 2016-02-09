@@ -58,7 +58,9 @@
 	var FLYUP_DURATION = 500;
 	var STAGGER_DURATION = 100;
 	var FLYUP_EASE = 'easeInOut';
-	var times = 0;
+
+	var downstream = document.getElementById('downstream');
+	var upstream = document.getElementById('upstream');
 
 	var hash = window.location.hash.toLowerCase();
 	var useTopNav = hash.indexOf('topnav') > -1;
@@ -317,9 +319,6 @@
 	    };
 	}
 
-	var downstream = document.getElementById('downstream');
-	var upstream = document.getElementById('upstream');
-
 	function move(e, zIndexing, direction) {
 	    e.stopPropagation();
 	    e.preventDefault();
@@ -349,50 +348,14 @@
 	};
 
 	if (useSideNav) {
-	    var sideSpread = new ui.Tween({
-	        values: {
-	            x: function (t) {
-	                var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
-	                return Number.isNaN(depth) ? 0 : depth < 0 ? (depth + 1) * 25 + 75 + '%' : (depth + 1) * 100 + '%';
-	            },
-	            y: function (t) {
-	                var d = t.element.getAttribute(DEPTH_PROP);
-	                return d === null ? 100 : d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) + 20 : 48;
-	            },
-	            opacity: function (t) {
-	                var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
-	                return Number.isNaN(depth) ? 0 : depth < 2 ? 1 : .5;
-	            },
-	            boxShadow: function (e) {
-	                var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
-	                switch (depth) {
-	                    case 1:
-	                        return '10px 5px 10px rgba(0,0,0,0.25)';
-	                    case 0:
-	                        return '-10px 5px 10px rgba(0,0,0,0.25)';
-	                    case NaN:
-	                        return '0px 0px 10px rgba(0,0,0,0.25)';
-	                    default:
-	                        {
-	                            if (depth < 0 && depth > -5) {
-	                                var size = 10 + depth * 2;
-	                                return '-' + size + 'px 5px ' + size + 'px rgba(0,0,0,0.25)';
-	                            } else {
-	                                return '0 5px 5px rgba(0,0,0,.15)';
-	                            }
-	                        }
-	                }
-	            }
-	        }
-	    });
+	    var sideSpread;
+	    var current;
+	    var handleHover;
+	    var d, u, n;
+	    var leftSide;
 
-	    var handleHover = function handleHover(event) {
-	        var current = findCurrentElement(elements);
-	        var previousElements = elements.filter(function (i) {
-	            return parseInt(i.getAttribute(DEPTH_PROP)) < parseInt(current.getAttribute(DEPTH_PROP));
-	        });
-
-	        function clearSpread() {
+	    (function () {
+	        var clearSpread = function () {
 	            elements.forEach(function (e) {
 	                var i = e.firstChild;
 	                if (i.className.indexOf(HOVER_CLASS) > -1) {
@@ -402,33 +365,82 @@
 
 	            iterator.each('start', flyup);
 	            miniIterator.each('start', carousel);
-	            current.onmouseover = null;
-	        }
+	            (current || {}).onmouseover = null;
+	        };
 
-	        iterator.each('start', sideSpread);
-
-	        previousElements.forEach(function (e) {
-	            var i = e.firstChild;
-	            if (i.className.indexOf(HOVER_CLASS) < 0) {
-	                i.className = i.className + HOVER_CLASS;
+	        sideSpread = new ui.Tween({
+	            values: {
+	                x: function (t) {
+	                    var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
+	                    return Number.isNaN(depth) ? 0 : depth < 0 ? (depth + 1) * 25 + 75 + '%' : (depth + 1) * 100 + '%';
+	                },
+	                y: function (t) {
+	                    var d = t.element.getAttribute(DEPTH_PROP);
+	                    return d === null ? 100 : d == 0 || d == 1 ? 0 : d < 0 ? Math.abs(d * 5) + 20 : 48;
+	                },
+	                opacity: function (t) {
+	                    var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
+	                    return Number.isNaN(depth) ? 0 : depth < 2 ? 1 : .5;
+	                },
+	                boxShadow: function (e) {
+	                    var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
+	                    switch (depth) {
+	                        case 1:
+	                            return '10px 5px 10px rgba(0,0,0,0.25)';
+	                        case 0:
+	                            return '-10px 5px 10px rgba(0,0,0,0.25)';
+	                        case NaN:
+	                            return '0px 0px 10px rgba(0,0,0,0.25)';
+	                        default:
+	                            {
+	                                if (depth < 0 && depth > -5) {
+	                                    var size = 10 + depth * 2;
+	                                    return '-' + size + 'px 5px ' + size + 'px rgba(0,0,0,0.25)';
+	                                } else {
+	                                    return '0 5px 5px rgba(0,0,0,.15)';
+	                                }
+	                            }
+	                    }
+	                }
 	            }
-
-	            i.onclick = function (ev) {
-	                var zIndexing = { 0: 3, 1: 2, '-1': 1 };
-	                var p = ev.target.parentNode;
-	                p.setAttribute(DEPTH_PROP, 0);
-	                var index = elements.indexOf(p);
-
-	                orderFrom(minis, index, zIndexing);
-	                orderFrom(elements, index, zIndexing);
-
-	                clearSpread();
-	            };
 	        });
 
-	        var d = downstream.onclick,
-	            u = upstream.onclick,
-	            n = navContainer.onclick;
+	        handleHover = function handleHover(event) {
+	            current = findCurrentElement(elements);
+	            var previousElements = elements.filter(function (i) {
+	                return parseInt(i.getAttribute(DEPTH_PROP)) < parseInt(current.getAttribute(DEPTH_PROP));
+	            });
+
+	            iterator.each('start', sideSpread);
+
+	            previousElements.forEach(function (e) {
+	                var i = e.firstChild;
+	                if (i.className.indexOf(HOVER_CLASS) < 0) {
+	                    i.className = i.className + HOVER_CLASS;
+	                }
+
+	                i.onclick = function (ev) {
+	                    var zIndexing = { 0: 3, 1: 2, '-1': 1 };
+	                    var p = ev.target.parentNode;
+	                    p.setAttribute(DEPTH_PROP, 0);
+	                    var index = elements.indexOf(p);
+
+	                    orderFrom(minis, index, zIndexing);
+	                    orderFrom(elements, index, zIndexing);
+
+	                    clearSpread();
+	                };
+	            });
+
+	            current.onmouseover = function () {
+	                return clearSpread();
+	            };
+	        };
+
+	        d = downstream.onclick;
+	        u = upstream.onclick;
+	        n = navContainer.onclick;
+
 
 	        downstream.onclick = function (e) {
 	            clearSpread();
@@ -445,13 +457,10 @@
 	            n(e);
 	        };
 
-	        current.onmouseover = function () {
-	            return clearSpread();
-	        };
-	    };
+	        leftSide = upstream.parentNode;
 
-	    var leftSide = upstream.parentNode;
-	    leftSide.onmouseover = handleHover;
+	        leftSide.onmouseover = handleHover;
+	    })();
 	}
 
 	function initTopNav() {

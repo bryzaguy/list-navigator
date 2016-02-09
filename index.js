@@ -10,7 +10,10 @@ var HOVER_CLASS = ' hint hint--top-right';
 var FLYUP_DURATION = 500;
 var STAGGER_DURATION = 100;
 var FLYUP_EASE = 'easeInOut';
-var times = 0;
+
+var downstream = document.getElementById('downstream');
+var upstream = document.getElementById('upstream');
+
 
 var hash = window.location.hash.toLowerCase();
 var useTopNav = hash.indexOf('topnav') > -1;
@@ -290,9 +293,6 @@ function transformElements (zIndexing, direction) {
     }
 }
 
-var downstream = document.getElementById('downstream');
-var upstream = document.getElementById('upstream');
-
 function move (e, zIndexing, direction) {
     e.stopPropagation();
     e.preventDefault();
@@ -360,24 +360,25 @@ if (useSideNav) {
         }
     });
 
+    var current;
+    function clearSpread() {
+        elements.forEach((e) => {
+            var i = e.firstChild;
+            if (i.className.indexOf(HOVER_CLASS) > -1) {
+                i.className = i.className.replace(HOVER_CLASS, '');
+            }
+        });
+
+        iterator.each('start', flyup);
+        miniIterator.each('start', carousel);
+        (current || {}).onmouseover = null;
+    }
+
     var handleHover = function handleHover (event) {
-        var current = findCurrentElement(elements);
+        current = findCurrentElement(elements);
         var previousElements = elements.filter((i) => 
             parseInt(i.getAttribute(DEPTH_PROP)) < parseInt(current.getAttribute(DEPTH_PROP))
         );
-
-        function clearSpread() {
-            elements.forEach((e) => {
-                var i = e.firstChild;
-                if (i.className.indexOf(HOVER_CLASS) > -1) {
-                    i.className = i.className.replace(HOVER_CLASS, '');
-                }
-            });
-
-            iterator.each('start', flyup);
-            miniIterator.each('start', carousel);
-            current.onmouseover = null;
-        }
 
         iterator.each('start', sideSpread);
 
@@ -400,27 +401,28 @@ if (useSideNav) {
             };
         });
 
-        var d = downstream.onclick, 
-            u = upstream.onclick,
-            n = navContainer.onclick;
-
-        downstream.onclick = (e) => {
-            clearSpread();
-            d(e);
-        };
-
-        upstream.onclick = (e) => {
-            clearSpread();
-            u(e);
-        };
-
-        navContainer.onclick = (e) => {
-            clearSpread();
-            n(e);
-        }
-
         current.onmouseover = () => clearSpread();
     };
+
+    var d = downstream.onclick, 
+        u = upstream.onclick,
+        n = navContainer.onclick;
+
+    downstream.onclick = (e) => {
+        clearSpread();
+        d(e);
+    };
+
+    upstream.onclick = (e) => {
+        clearSpread();
+        u(e);
+    };
+
+    navContainer.onclick = (e) => {
+        clearSpread();
+        n(e);
+    }
+
 
     var leftSide = upstream.parentNode;
     leftSide.onmouseover = handleHover;
