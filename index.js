@@ -172,7 +172,7 @@ var defaults = {
     values: {
         opacity: (e) => {
             var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
-            return depth === NaN ? 0 : depth == 0 || depth == 1 ? 1 : 0.5;
+            return isNaN(depth) ? 0 : depth == 0 || depth == 1 ? 1 : 0.5;
         },
         x: (e) => {
             var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
@@ -326,7 +326,7 @@ if (useSideNav) {
         values: {
             x: (t) => {
                 var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
-                return depth === NaN ? 0 : depth < 0 ? 
+                return isNaN(depth) ? 0 : depth < 0 ? 
                     (((depth + 1) * 12.5) + 37.5) + '%' :
                     ((depth + 1) * 100) - 50 + '%';
             },
@@ -336,7 +336,7 @@ if (useSideNav) {
             },
             opacity: (t) => {
                 var depth = parseInt(t.element.getAttribute(DEPTH_PROP));
-                return depth === NaN ? 0 : depth < 2 ? 1 : .5;
+                return isNaN(depth) ? 0 : depth < 2 ? 1 : .5;
             },
             boxShadow: (e) => {
                 var depth = parseInt(e.element.getAttribute(DEPTH_PROP));
